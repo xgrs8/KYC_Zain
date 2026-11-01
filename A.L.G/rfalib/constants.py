@@ -1,6 +1,6 @@
-"""Shared constants for R.F.G and A.L.G (vendored rfalib).
+"""Constants for A.L.G and its supporting library.
 
-Both apps import from this module; keep it dependency-free (stdlib only).
+Keep this module dependency-free (stdlib only).
 """
 from __future__ import annotations
 
@@ -12,9 +12,7 @@ RFALIB_VERSION = "0.1.0"
 APP_VERSION = "0.1.0"
 
 # ---------------------------------------------------------------- programs
-APP_NAME_RFG = "R.F.G - Random Field Generator"
 APP_NAME_ALG = "A.L.G - Automatic Label Generator"
-APP_TITLE_RFG = "Random Field Generator"
 APP_TITLE_ALG = "Automatic Label Generator"
 
 # ---------------------------------------------------------------- doc types
@@ -77,7 +75,7 @@ def default_workspace() -> pathlib.Path:
 
 WORKSPACE_SUBDIRS = (
     "templates",   # the user's three template source images
-    "generated",   # R.F.G batches: generated/<batch>/...
+    "generated",   # generated images
     "labeled",     # A.L.G outputs
     "print",       # print/<batch>/... PDFs
     "quarantine",  # samples that failed the face gate

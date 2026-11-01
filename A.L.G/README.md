@@ -19,14 +19,13 @@ exact format.
 ## Install & run (from source)
 
 ```powershell
-cd ALG
+cd A.L.G
 pip install -r requirements.txt
 python alg/main.py
 ```
 
-No other repo folder is needed (the shared library is vendored in
-`rfalib/`, byte-identical to `../RFG/rfalib` — enforced by CI). No
-OpenCV / reportlab dependency.
+No sibling source folder is required; the supporting library is included
+under `rfalib/`. No OpenCV / reportlab dependency.
 
 Headless selftest (renders the Arabic probe, computes an MRZ probe,
 verifies the label gate and the merge geometry; writes nothing, exit 0):
@@ -44,8 +43,8 @@ python alg/main.py --selftest
    samples; PNG/JPEG only.
 3. **Type or mark every field** — one row per field in the schema order;
    Arabic fields are RTL + right-aligned, MRZ/serials/dates are LTR.
-   Each row has an **[Unreadable]** toggle and — only when the sample
-   carries a truth sidecar from R.F.G — a **Use truth** button that fills
+   Each row has an **[Unreadable]** toggle and — when the sample carries
+   a truth sidecar — a **Use truth** button that fills
    the printed value as a *suggestion you must accept field-by-field*
    (nothing is auto-filled). Keyboard: `Ctrl+U` unreadable, `Ctrl+T`
    use truth, `Enter` next field, `Ctrl+G` generate.
@@ -53,8 +52,7 @@ python alg/main.py --selftest
    `[UNREADABLE]`** — mixed junk is rejected.
    A resolved field receives a subtle green outline/glow; it clears again
    if you erase the text or unmark `[Unreadable]`.
-4. **Generate** — merges the ID front+back with the exact same
-   `rfalib.merge` as R.F.G (pixel-identical by construction), saves
+4. **Generate** — merges the ID front+back with `rfalib.merge`, saves
    `labeled/<NAME>.png` (+ optional JPEG), writes
    `<NAME>.label.json` (the exact schema) and
    `<NAME>.label.sidecar.json`, marks the queue row Done and
@@ -85,7 +83,7 @@ schemas.
 ```powershell
 pip install -r requirements.txt pytest
 pytest tests            # tests: label gate, queue, schema, normalize,
-                        # merge (golden hash shared with RFG), GUI structure
+                        # merge geometry and output, GUI structure
 ```
 
 ## Packaging (Windows)
@@ -103,10 +101,10 @@ workspace in Documents is kept), silent install/uninstall via
 ## Repository layout
 
 ```
-ALG/
+A.L.G/
 ├── README.md               this file
 ├── requirements.txt        pinned deps (no OpenCV / reportlab)
-├── rfalib/                 vendored shared library (byte-identical to RFG/rfalib)
+├── rfalib/                 supporting library used by A.L.G
 ├── alg/
 │   ├── main.py             entry point (GUI + --selftest)
 │   ├── queue.py            sample queue + states + persistence

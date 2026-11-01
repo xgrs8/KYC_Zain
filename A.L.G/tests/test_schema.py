@@ -1,4 +1,4 @@
-"""T-SCHEMA / T-NORM on the ALG side (same vendored rfalib as R.F.G):
+"""T-SCHEMA / T-NORM for the A.L.G supporting library:
 the exact 6.4 contract, [UNREADABLE] token, UTF-8 round-trip, and the
 6.7 normalization vectors (incl. علي != على)."""
 from __future__ import annotations

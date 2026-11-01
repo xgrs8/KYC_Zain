@@ -10,8 +10,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# bootstrap the app root so `python rfg/main.py` (or the frozen exe) finds
-# both the app package and the vendored rfalib (self-contained folder, 5.1)
+# Bootstrap the app root so the GUI package and supporting library are
+# available both from source and from the frozen executable.
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))

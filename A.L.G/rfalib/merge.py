@@ -1,11 +1,9 @@
-"""Front+back merge (plan 7.4 / 8.5, D11) - shared by R.F.G and A.L.G.
+"""Front+back image merge for A.L.G ID labels.
 
 Front stacked ABOVE back; common width = the wider side scaled to the
 target width (default 1140 px); 24 px white gap; never downscale the
-larger side; PNG output (JPEG q95 optional).  The exact same function is
-imported by both apps from the vendored byte-identical rfalib (T-SYNC /
-T-MERGE), so a labeled R.F.G sample and its generated twin are
-pixel-identical.
+larger side; PNG output (JPEG q95 optional). The same function is used
+for every generated ID label so output geometry remains consistent.
 """
 from __future__ import annotations
 

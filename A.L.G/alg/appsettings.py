@@ -1,4 +1,4 @@
-"""App settings IO for A.L.G (same workspace settings.json as R.F.G)."""
+"""Settings file IO for A.L.G."""
 from __future__ import annotations
 
 import json

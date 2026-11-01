@@ -3,8 +3,8 @@
 All JSON files are written UTF-8, ensure_ascii=False, no BOM, "\\n"
 newlines, 2-space indent - and round-trip byte-exact (T-SCHEMA).
 
-Truth sidecar  (<doc>.truth.json, R.F.G): what is actually printed.
-Label sidecar  (<doc>.label.sidecar.json, A.L.G): labeling metadata.
+Truth sidecar  (<doc>.truth.json): source values printed on the image.
+Label sidecar  (<doc>.label.sidecar.json): labeling metadata.
 """
 from __future__ import annotations
 
@@ -150,7 +150,7 @@ def label_sidecar(*, doc_id: str, photo: str, doc_type: str, labeler: str,
 # ---------------------------------------------------------------- lookup
 
 def find_truth_sidecar(image_path: Path) -> Path | None:
-    """Truth sidecar next to a source image (R.F.G outputs).
+    """Find the truth sidecar associated with a source image.
 
     For ID_01_front.png / ID_01_back.png looks for ID_01.truth.json;
     for TAX_01.png looks for TAX_01.truth.json.

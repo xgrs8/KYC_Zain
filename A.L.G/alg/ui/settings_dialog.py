@@ -29,7 +29,7 @@ class SettingsDialog(QDialog):
         wform.addRow("Labeler:", self.labeler_edit)
         layout.addWidget(who_box)
 
-        merge_box = QGroupBox("Merge (front + back, identical to R.F.G)")
+        merge_box = QGroupBox("Merge (front + back)")
         mform = QFormLayout(merge_box)
         self.width_spin = QSpinBox()
         self.width_spin.setRange(1000, 1600)

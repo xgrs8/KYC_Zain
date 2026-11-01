@@ -1,9 +1,9 @@
 """Name / value pools (plan 6.2, protocol B4 and rule 10).
 
-Pools are loaded from RFG/data/names/*.txt (one entry per line, `#`
-comments allowed), deduplicated via the 6.7 normalization, and screened
-against data/blocklist.txt - a blocklist hit raises (fail-closed).
-Provenance is documented in data/names/SOURCES.md.
+Pools are loaded from the configured directory, one entry per line;
+`#` comments are allowed. Entries are normalized, deduplicated, and
+screened against the adjacent blocklist file when present. A blocklist
+hit fails validation.
 """
 from __future__ import annotations
 

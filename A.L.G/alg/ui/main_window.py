@@ -497,8 +497,8 @@ class ALGWindow(QMainWindow):
             f"Version {APP_VERSION}<br><br>"
             f"Human-driven labeling: pick the type, upload the image(s), "
             f"type every field or mark it [UNREADABLE], Generate.<br>"
-            f"The ID front and back are merged exactly like R.F.G "
-            f"(shared rfalib), and the label JSON matches the agreed "
+            f"The ID front and back are merged using A.L.G's "
+            f"merge logic, and the label JSON matches the agreed "
             f"schemas byte-for-byte.")
 
     # ------------------------------------------------------------ data

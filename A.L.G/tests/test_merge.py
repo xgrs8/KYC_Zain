@@ -1,6 +1,4 @@
-"""T-MERGE on the ALG side (plan 11): merge geometry + the golden pixel
-hash shared with RFG's test - both vendored rfalib copies must produce
-the identical hash (byte-identical library, T-SYNC)."""
+"""Merge geometry and a fixed golden pixel hash for the A.L.G support library."""
 from __future__ import annotations
 
 import hashlib
@@ -28,15 +26,14 @@ def test_merge_geometry():
     assert merged.getpixel((10, h_front + 34)) == (215, 218, 226)  # back below
 
 
-def test_rfg_alg_merge_identity():
-    """The exact golden hash RFG's test computes - a labeled R.F.G sample
-    and its generated twin are pixel-identical (D11)."""
+def test_merge_golden_hash():
+    """The merge result retains its expected pixel hash."""
     front, back = _golden_pair()
     merged = M.merge_images(front, back, width=1140, gap=24)
     assert hashlib.sha256(merged.tobytes()).hexdigest() == GOLDEN_PIXEL_SHA
 
 
-def test_merge_files_identity_with_rfg(tmp_path):
+def test_merge_files_roundtrip(tmp_path):
     front, back = _golden_pair()
     f, b = tmp_path / "ID_01_front.png", tmp_path / "ID_01_back.png"
     front.save(f)

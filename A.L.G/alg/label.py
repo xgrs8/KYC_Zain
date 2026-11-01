@@ -2,14 +2,14 @@
 
 Human-driven labeling: the labeler types every field or marks it
 [UNREADABLE]; nothing is auto-filled.  When the uploaded image carries a
-truth sidecar (it came from R.F.G) each field offers a "Use truth"
+truth sidecar, each field offers a "Use truth"
 suggestion that must be accepted field-by-field.  Every acceptance, edit
 and disagreement is logged in the label sidecar.
 
 Generate stays disabled until every field is resolved (non-empty xor
-[UNREADABLE]); on Generate the ID front+back are merged with the same
-rfalib.merge as R.F.G and the label JSON is written in the user's exact
-format (6.4).
+[UNREADABLE]); on Generate the ID front+back are merged with
+rfalib.merge and the label JSON is written in the user's exact format
+(6.4).
 """
 from __future__ import annotations
 
