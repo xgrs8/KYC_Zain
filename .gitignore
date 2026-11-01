@@ -1,0 +1,32 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frozen build output
+build/
+dist/
+*.spec.bak
+*.exe
+*.msi
+
+# Local workspace data (never commit labels or images)
+workspace/
+generated/
+labeled/
+print/
+quarantine/
+state.json
+settings.json
+alg_queue.json
+*.truth.json.tmp
+*.label.json.tmp
+
+# OS noise
+Thumbs.db
+.DS_Store

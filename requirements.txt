@@ -1,0 +1,7 @@
+# A.L.G - Automatic Label Generator (run: pip install -r requirements.txt)
+# no OpenCV / reportlab needed (plan D1); arabic-reshaper + python-bidi are
+# required by the vendored rfalib render module used by --selftest
+pyside6==6.12.0
+pillow==11.3.0
+arabic-reshaper==3.0.1
+python-bidi==0.6.12
