@@ -1,6 +1,6 @@
 # A.L.G — Automatic Label Generator
 
-The human-driven labeling tool for the RFALG training dataset: the
+The human-driven labeling tool for the training dataset: the
 labeler picks the document type, uploads the image(s), types **every**
 field or marks it `[UNREADABLE]`, and clicks **Generate** — which
 produces the merged image (ID only) and the label JSON in the agreed
@@ -9,10 +9,6 @@ exact format.
 > ⚠️ **Labels describe synthetic training data.** The label always
 > records **what is printed** on the image, never what was intended.
 
-Classic Microsoft-console UI (Hyper-V Manager reference): menu bar,
-gradient toolbar with glossy 16×16 icons, navigation tree (Labeling
-Steps 1–4 / Labels: Waiting, Done, Skipped), center queue + label form,
-blue-link Actions pane, status bar.
 
 ## Screenshots
 
