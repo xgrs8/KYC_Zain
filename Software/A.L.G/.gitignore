@@ -1,5 +1,6 @@
 # Python environments and caches
 .venv/
+.venv-mcp/
 venv/
 __pycache__/
 *.py[cod]
@@ -26,6 +27,12 @@ settings.json
 alg_queue.json
 *.truth.json.tmp
 *.label.json.tmp
+ai_labeled/
+ai_review.html
+alg_mcp_state.json
+alg_mcp_state.lock
+alg_mcp_audit.jsonl
+alg_mcp_token.txt
 
 # OS noise
 Thumbs.db

@@ -1,0 +1,6 @@
+# Extra requirements for the A.L.G MCP server (the desktop app's own requirements.txt is separate).
+# The MCP server does NOT need PySide6.
+mcp>=1.30,<2        # tested with 1.30.0; mcp 2.x renamed the server API and is not supported yet
+pillow>=11.0
+# for the test-suite only:
+pytest>=8.0

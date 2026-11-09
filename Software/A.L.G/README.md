@@ -19,7 +19,7 @@ exact format.
 ## Install & run (from source)
 
 ```powershell
-cd A.L.G
+cd Software\A.L.G
 pip install -r requirements.txt
 python alg/main.py
 ```
@@ -31,6 +31,7 @@ Headless selftest (renders the Arabic probe, computes an MRZ probe,
 verifies the label gate and the merge geometry; writes nothing, exit 0):
 
 ```powershell
+cd Software\A.L.G
 python alg/main.py --selftest
 ```
 
@@ -81,14 +82,23 @@ schemas.
 ## Tests
 
 ```powershell
+cd Software\A.L.G
 pip install -r requirements.txt pytest
 pytest tests            # tests: label gate, queue, schema, normalize,
                         # merge geometry and output, GUI structure
 ```
 
+## MCP server (optional)
+
+The companion MCP server lets an MCP-capable agent draft labels through the
+same schemas and validation rules. Its source, setup guide, requirements, and
+tests are in [`mcp/`](mcp/README.md). AI labels go to `ai_labeled/` for review
+before they are promoted into `labeled/`.
+
 ## Packaging (Windows)
 
 ```powershell
+cd Software\A.L.G
 .\packaging\build.ps1              # tests + selftest + PyInstaller + Inno Setup
 .\packaging\build.ps1 -SkipInstaller
 ```
@@ -111,5 +121,6 @@ A.L.G/
 │   ├── label.py            label building, resolution gate, sidecars
 │   └── ui/                 Aero-style windows, upload wizard, label form
 ├── tests/                  pytest suite
+├── mcp/                    optional MCP server, setup guide, and MCP tests
 └── packaging/              alg.iss, icons/ALG.ico, build.ps1
 ```
