@@ -44,3 +44,18 @@ def test_merge_files_roundtrip(tmp_path):
         assert im.size == tuple(geom["merged_size"])
         assert im.format == "PNG"
     assert geom["order"] == "front-over-back"
+
+
+def test_merge_files_applies_the_exif_rotation(tmp_path):
+    """A phone photo stored sideways with an EXIF orientation tag is merged upright, as viewers show it."""
+    front, back = _golden_pair()
+    sideways = front.rotate(90, expand=True)                       # pixels stored rotated ...
+    exif = Image.Exif()
+    exif[0x0112] = 6                                               # ... and the tag says "rotate 90 cw to view"
+    f, b = tmp_path / "ID_02_front.jpg", tmp_path / "ID_02_back.png"
+    sideways.save(f, exif=exif, quality=95)
+    back.save(b)
+    geom = M.merge_files(f, b, tmp_path / "ID_02.png", width=1140, gap=24)
+    assert geom["front_size"] == [1140, round(260 * 1140 / 400)]   # landscape again, not 1140 x 1754
+    with Image.open(tmp_path / "ID_02.png") as im:
+        assert list(im.size) == geom["merged_size"]

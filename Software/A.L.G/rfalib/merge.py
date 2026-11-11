@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from .constants import MERGE_DEFAULT_GAP, MERGE_DEFAULT_WIDTH
 
@@ -65,8 +65,11 @@ def merge_files(front_path: str | Path, back_path: str | Path,
 
     Returns the geometry dict for the sidecars.
     """
-    front = Image.open(front_path)
-    back = Image.open(back_path)
+    # Phone photos often store their rotation as an EXIF tag instead of in the pixels. Viewers (and the MCP
+    # server's view_sample) show them upright, so the merged label image must be upright too; the PNG has no
+    # EXIF tag that could rotate it back. Images without the tag are unchanged.
+    front = ImageOps.exif_transpose(Image.open(front_path))
+    back = ImageOps.exif_transpose(Image.open(back_path))
     merged = merge_images(front, back, width, gap)
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
