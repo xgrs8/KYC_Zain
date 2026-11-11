@@ -119,10 +119,16 @@ DOCUMENTS
 
 MRZ (ID only)
 - Each mrz_line is exactly 30 characters from A-Z, 0-9 and the filler "<". Count the "<" carefully:
-  line 1 ends with 3, line 2 has a run of 11 just before its last character, line 3 is padded to 30.
-- Before submitting call mrz_check: it verifies the ICAO check digits and compares the MRZ with the
-  visual fields. A failure usually means one misread character or a miscounted "<" run: zoom in and
-  re-read; if you still are not certain, mark that line [UNREADABLE].
+  every line is padded with "<" to 30 (line 1 is all "<" after the document number's check digit when
+  the card prints no optional data there), line 2 usually has a run of 11 just before its last
+  character, line 3 is padded to 30.
+- Before submitting call mrz_check: it verifies the check digits and compares the MRZ with the visual
+  fields. A failure usually means one misread character or a miscounted "<" run: zoom in and re-read.
+  Type only what is printed; never change a character to make a check pass. If you are certain the line
+  is exactly what is printed and a check still fails (some cards are printed with a wrong check digit),
+  keep it and pass a format_exception for that line that says so. A mismatch of the composite check
+  digit alone (last character of line 2) does not block: re-check that character, then confirm.
+  Mark a line [UNREADABLE] only if you cannot read every character of it (rule 2).
 
 WORKFLOW
 1. next_sample(agent="<your model name>")  -> claims one sample.

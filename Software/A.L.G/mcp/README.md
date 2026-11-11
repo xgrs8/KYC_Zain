@@ -27,7 +27,10 @@ alg_mcp  ──►  rules (readable / [UNREADABLE]), claims, MRZ checks, blind r
    printed, but it must give a `format_exception` reason; it is logged in `warnings_overridden` exactly like the app does, and the label goes to human review.
 4. **Blind labeling.** If a `*.truth.json` (generator reference values) exists, agents never see it. The server compares afterwards and
    writes `agrees / disagrees / agent_unreadable` per field into `X.label.ai.json`. Disagreements and "unreadable although a reference exists" go to human review.
-5. **MRZ is checked in code** (30 chars, ICAO check digits, and consistency with the visual fields). The server never reveals the "right" MRZ; it only says what is wrong.
+5. **MRZ is checked in code** (30 chars, check digits, and consistency with the visual fields). The server never reveals the "right" MRZ; it only says what is wrong,
+   and it never asks an agent to change a character it read correctly or to mark a readable line unreadable: the label is what is printed. Printed cards
+   can carry a wrong check digit (81 of the 90 IDs in this project's ground truth have a composite check digit that the ICAO formula does not give), so a
+   composite-only mismatch asks for a re-check and a confirmation, and an agent that is certain of a line that fails another check keeps it with a `format_exception`.
 6. **Agents can only touch samples you registered.** No tool takes a file path. You register images with the CLI.
 7. **Optional redundancy:** `--redundancy 2` needs two *different* agents to agree on every field; disagreement → `needs_human`.
 8. **Audit trail:** `alg_mcp_audit.jsonl` (every tool call, no values), `X.label.ai.json` (agents, reasons, views/zooms, flags), sidecar `labeler = "ai:<agent>"`.
@@ -139,7 +142,7 @@ python run_alg_mcp.py promote --auto-ok --approved    # copy into labeled/ (neve
 python run_alg_mcp.py promote --auto-ok --dry-run     # see what would move
 ```
 
-`auto_ok` means: format rules met, no format exceptions, MRZ valid and consistent, no disagreement with the reference values, and nothing marked unreadable
+`auto_ok` means: format rules met, no format exceptions, every MRZ check digit valid and the MRZ consistent, no disagreement with the reference values, and nothing marked unreadable
 although a reference exists. It is **not** proof of correctness: audit a random sample (0 errors in 100 audited fields means the error rate is below ~3 % with 95 % confidence).
 Labels without reference values and a single agent are always `needs_review`.
 
@@ -159,8 +162,9 @@ on every field; otherwise the sample is `needs_human`: `python run_alg_mcp.py re
 | Value breaks the app's regex for that field | stored as *pending*; `submit_label` blocked until re-read or `format_exception` (≥ 8 chars) given |
 | A field is missing | `submit_label` blocked |
 | A side was never viewed (`view_sample`), unless `--no-require-view` | blocked |
-| ID: MRZ line not 30 chars / bad check digit | blocked (unless that line is unreadable or has a format exception) |
-| ID: MRZ disagrees with a visual field (serial, national id, dates, sex, names) | `needs_confirmation`: agent must re-inspect, then `confirm=true` |
+| ID: MRZ line not 30 chars, bad character, wrong fixed part (`IDIRQ`, `IRQ`, sex), or a wrong check digit of the document number / birth date / expiry date | blocked; the message says which characters to re-read. If the agent is certain the line is what is printed, it keeps it and gives a `format_exception` for that line (→ human review). Never "fix" it, never mark a readable line unreadable |
+| ID: only the composite check digit (last character of line 2) is wrong | `needs_confirmation` (`mrz_check_digit` flag): re-check that character, then `confirm=true`; the label goes to human review |
+| ID: MRZ disagrees with a visual field (serial, national id when line 1 has optional data, dates, sex, names) | `needs_confirmation`: agent must re-inspect, then `confirm=true`. Names are compared by their consonants, because the MRZ spells them with vowels (`الربيعي` → `ALRUBAIE`) |
 | Many fields unreadable, or all of them | `needs_confirmation` (zoom first / skip the sample) |
 | Another agent holds the sample | not offered; claims expire after 45 min (`ALG_MCP_LEASE_MINUTES`) |
 
@@ -205,7 +209,7 @@ The merge width/gap and JPEG option are read from the app's `settings.json` in t
 
 ```powershell
 pip install -r requirements-mcp.txt
-python -m pytest tests_mcp -q      # 56 tests: rules, MRZ, redundancy, blind comparison, stdio subprocess, HTTP auth, SSE, CLI/review
+python -m pytest tests_mcp -q      # 73 tests: rules, MRZ, redundancy, blind comparison, stdio subprocess, HTTP auth, SSE, CLI/review
 ```
 They run against the real A.L.G label engine. Not covered by the tests: the real ChatGPT / Claude / GLM clients and Windows (the tests ran on Linux).
 

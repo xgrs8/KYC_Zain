@@ -149,9 +149,11 @@ def build_server(cfg: Config, host: str = "127.0.0.1", port: int = 8765) -> tupl
     @tool(READ)
     def mrz_check(sample_id: Optional[str] = None, line1: Optional[str] = None, line2: Optional[str] = None,
                   line3: Optional[str] = None, agent: Optional[str] = None) -> dict:
-        """ID only. Verify MRZ lines (30 chars each, ICAO check digits) and compare them with the visual fields.
+        """ID only. Verify MRZ lines (30 chars each, check digits) and compare them with the visual fields.
         Pass sample_id to check your saved lines, or line1/line2/line3 to test candidates. It never shows the
-        'right' MRZ: re-read the image (zoom) when it reports a problem."""
+        'right' MRZ: re-read the image (zoom) when it reports a problem. 'problems' block submit_label;
+        'warnings' (composite check digit only) need a re-check and confirm=true. Never change a character to
+        make a check pass: if you are certain a line is what is printed, keep it and give a format_exception."""
         return svc.mrz_check(sample_id, line1, line2, line3, agent)
 
     @tool(READ)
@@ -164,8 +166,9 @@ def build_server(cfg: Config, host: str = "127.0.0.1", port: int = 8765) -> tupl
     def submit_label(sample_id: str, agent: Optional[str] = None, confirm: bool = False,
                      notes: Optional[str] = None) -> dict:
         """Finish the sample. Blocked until every field is set (text or unreadable), format warnings are decided,
-        every side was viewed and the MRZ is valid. If it returns needs_confirmation, re-inspect the flagged fields
-        and call again with confirm=true. Labels are written to a review folder, not straight into the dataset."""
+        every side was viewed and the MRZ passes its blocking checks (or has a format_exception). If it returns
+        needs_confirmation, re-inspect the flagged fields and call again with confirm=true. Labels are written to
+        a review folder, not straight into the dataset."""
         return svc.submit_label(sample_id, agent, confirm, notes)
 
     @tool(WRITE)

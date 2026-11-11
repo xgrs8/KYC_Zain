@@ -301,6 +301,15 @@ class Service:
                     draft["pending_format"].pop(key, None)
                     draft["exceptions"].pop(key, None)
                     accepted.append(key)
+            if s["doc_type"] == "ID":
+                # A line that passes the format but fails an MRZ check digit has no format warning to except,
+                # yet the agent may be certain it is what is printed (cards with a wrong check digit exist).
+                # Then the exception is the honest way out; the label goes to human review.
+                for key in self._mrz_exceptions(draft, format_exceptions):
+                    if key in accepted:
+                        accepted.remove(key)
+                    if key not in with_exception:
+                        with_exception.append(key)
             for key, why in format_exceptions.items():                 # exception for an already stored value
                 if key in values or key not in draft["pending_format"]:
                     continue
@@ -314,6 +323,22 @@ class Service:
             return {"sample_id": s["sid"], "accepted": accepted, "accepted_with_format_exception": with_exception,
                     "needs_format_decision": pending, "marked_unreadable": marked, "rejected": rejected,
                     "progress": self._progress(s, draft)}
+
+    @staticmethod
+    def _mrz_exceptions(draft: dict, format_exceptions: dict) -> list[str]:
+        """Record format exceptions for MRZ lines while the MRZ fails a blocking check. Returns the keys."""
+        lines = [draft["fields"].get(k) for k in mrz_tools.LINE_KEYS]
+        if any(v is None or v == UNREADABLE for v in lines):
+            return []
+        if not mrz_tools.check_lines(tuple(lines))["problems"]:          # type: ignore[arg-type]
+            return []
+        done = []
+        for key in mrz_tools.LINE_KEYS:
+            why = (format_exceptions.get(key) or "").strip()
+            if len(why) >= 8 and key not in draft["pending_format"]:
+                draft["exceptions"][key] = why
+                done.append(key)
+        return done
 
     def _mark(self, s: dict, draft: dict, key: str, reason: str, note: str | None) -> dict:
         if key not in self._keys(s["doc_type"]):
@@ -390,13 +415,21 @@ class Service:
             if missing_views:
                 blocking.append(f"you have not viewed these sides with view_sample: {missing_views}")
         mrz = self._mrz(s, draft)
-        if mrz and mrz.get("checked") and not mrz["valid"]:
-            if not any(k in draft["exceptions"] for k in mrz_tools.LINE_KEYS):
-                msg = "MRZ is invalid: " + "; ".join(mrz["problems"])
-                if mrz.get("repair_hint"):
-                    msg += ". " + mrz["repair_hint"]
-                blocking.append(msg + " Re-read the MRZ (zoom in), or mark the bad line unreadable.")
+        excepted = any(k in draft["exceptions"] for k in mrz_tools.LINE_KEYS)
+        if mrz and mrz.get("checked") and mrz["problems"] and not excepted:
+            msg = "MRZ is invalid: " + "; ".join(mrz["problems"]) + "."
+            if mrz.get("repair_hint"):
+                msg += " " + mrz["repair_hint"]
+            # Never steer the agent towards [UNREADABLE] or towards "fixing" a character it read correctly:
+            # the label must be what is printed.
+            blocking.append(msg + " Zoom into the MRZ and type exactly what is printed. If you are sure your "
+                                  "line matches the card, keep it and give a format_exception for that line "
+                                  "(it goes to human review). Use mark_unreadable only if you really cannot "
+                                  "read the line.")
         flags: list[dict] = []
+        if mrz and mrz.get("checked") and mrz.get("warnings") and not excepted:
+            flags += [{"kind": "mrz_check_digit", "check": "composite_check_digit", "fields": ["mrz_line2"],
+                       "detail": w} for w in mrz["warnings"]]
         if s["doc_type"] == "ID":
             flags += [{"kind": "mrz_consistency", **f} for f in mrz_tools.consistency(draft["fields"])]
         total = len(keys)
@@ -596,7 +629,8 @@ class Service:
             reasons.append("format exception(s): " + ", ".join(sorted(final["exceptions"])))
         if not truth and len(subs) < 2:
             reasons.append("no reference values and only one agent: needs human review")
-        soft = [f for f in final["flags"] if f.get("kind") in ("mrz_consistency", "many_unreadable", "all_unreadable")]
+        soft = [f for f in final["flags"]
+                if f.get("kind") in ("mrz_check_digit", "mrz_consistency", "many_unreadable", "all_unreadable")]
         reasons += [f"{f['kind']}: {f.get('detail', '')}" for f in soft]
         state = "auto_ok" if not reasons else "needs_review"
         audit = {
