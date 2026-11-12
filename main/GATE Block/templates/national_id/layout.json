@@ -1,0 +1,218 @@
+{
+  "doc_type": "national_id",
+  "rigid": true,
+  "sides": {
+    "front": {
+      "card": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "fields": {
+        "national_id_number": {
+          "box": [
+            0.335,
+            0.28,
+            0.682,
+            0.345
+          ],
+          "critical": true
+        },
+        "name": {
+          "box": [
+            0.52,
+            0.41,
+            0.775,
+            0.476
+          ],
+          "critical": true
+        },
+        "father_name": {
+          "box": [
+            0.52,
+            0.476,
+            0.775,
+            0.553
+          ],
+          "critical": true
+        },
+        "grandfather_name": {
+          "box": [
+            0.52,
+            0.553,
+            0.775,
+            0.622
+          ],
+          "critical": true
+        },
+        "surname": {
+          "box": [
+            0.52,
+            0.622,
+            0.775,
+            0.69
+          ],
+          "critical": true
+        },
+        "mother_name": {
+          "box": [
+            0.52,
+            0.69,
+            0.775,
+            0.764
+          ],
+          "critical": false
+        },
+        "maternal_grandfather_name": {
+          "box": [
+            0.52,
+            0.764,
+            0.775,
+            0.84
+          ],
+          "critical": false
+        },
+        "sex": {
+          "box": [
+            0.52,
+            0.84,
+            0.775,
+            0.908
+          ],
+          "critical": false
+        },
+        "blood_group": {
+          "box": [
+            0.5,
+            0.908,
+            0.662,
+            0.975
+          ],
+          "critical": false
+        },
+        "card_serial": {
+          "box": [
+            0.035,
+            0.888,
+            0.33,
+            0.952
+          ],
+          "critical": false
+        }
+      },
+      "ignore": [
+        [
+          0.925,
+          0.79,
+          0.972,
+          0.962
+        ],
+        [
+          0.02,
+          0.36,
+          0.43,
+          0.875
+        ],
+        [
+          0.02,
+          0.21,
+          0.325,
+          0.36
+        ]
+      ]
+    },
+    "back": {
+      "card": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "fields": {
+        "issuing_authority": {
+          "box": [
+            0.08,
+            0.045,
+            0.575,
+            0.128
+          ],
+          "critical": false
+        },
+        "issue_date": {
+          "box": [
+            0.08,
+            0.132,
+            0.575,
+            0.192
+          ],
+          "critical": false
+        },
+        "expiry_date": {
+          "box": [
+            0.08,
+            0.198,
+            0.575,
+            0.262
+          ],
+          "critical": true
+        },
+        "place_of_birth": {
+          "box": [
+            0.08,
+            0.268,
+            0.575,
+            0.34
+          ],
+          "critical": false
+        },
+        "birth_date": {
+          "box": [
+            0.08,
+            0.342,
+            0.575,
+            0.405
+          ],
+          "critical": true
+        },
+        "family_number": {
+          "box": [
+            0.08,
+            0.412,
+            0.575,
+            0.478
+          ],
+          "critical": false
+        },
+        "mrz_line1": {
+          "box": [
+            0.035,
+            0.678,
+            0.965,
+            0.752
+          ],
+          "critical": false
+        },
+        "mrz_line2": {
+          "box": [
+            0.035,
+            0.755,
+            0.965,
+            0.83
+          ],
+          "critical": false
+        },
+        "mrz_line3": {
+          "box": [
+            0.035,
+            0.838,
+            0.965,
+            0.912
+          ],
+          "critical": false
+        }
+      },
+      "ignore": []
+    }
+  }
+}

@@ -1,0 +1,30 @@
+# Quality gate: where each measured value becomes mild / moderate / severe.
+# Each list is [mild, moderate, severe]. A value exactly on a threshold gets the worse severity.
+# These are STARTING VALUES tuned on the reference documents, simulated photos and ten real phone photos.
+# Calibrate them on your own photos:  python -m gate_block calibrate PHOTOS_DIR --out calibration
+blur_ratio: [0.12, 0.17, 0.22]       # blur (Gaussian sigma) as a share of the height of the smallest printed text; higher is worse
+dark_ratio: [0.65, 0.50, 0.35]       # brightness relative to the template; lower is worse
+contrast_ratio: [0.55, 0.40, 0.28]   # contrast relative to the template; lower is worse
+shadow_depth: [0.20, 0.34, 0.52]     # how much darker the darkest region is than the rest; higher is worse
+glare_content: [0.008, 0.04, 0.10]   # share of the printed content hidden by glare; higher is worse
+text_px: [10.0, 7.0, 5.0]            # height of the smallest printed text in pixels of the photo; lower is worse
+perspective: [0.08, 0.18, 0.35]      # opposite-side length mismatch (camera angle); higher is worse
+curl: [0.02, 0.04, 0.07]             # local misalignment of flexible paper, share of the long side
+noise_sigma: [3.0, 5.0, 8.0]         # noise above the template's own texture, grey levels
+cut_fraction: [0.01, 0.025, 0.06]    # share of the document outside the frame
+obstruction: [0.05, 0.10, 0.20]      # share of the document covered by a hand or an object
+exposure_ref: 1.0                    # brightness ratio of a GOOD photo (set by calibration)
+glare_v: 245                         # glare = pixels at least this bright (HSV V, 0-255) ...
+glare_s: 45                          # ... and at most this colourful (HSV S, 0-255)
+# field level (each field box of layout.json is checked on its own)
+field_glare: [0.03, 0.12, 0.30]      # share of the field box washed out
+field_covered: [0.08, 0.20, 0.45]    # share of the field box covered by a hand or an object
+field_outside: [0.005, 0.03, 0.15]   # share of the field box outside the frame
+field_min_edge_pixels: 60            # fewer strong-edge pixels -> field sharpness "unknown"
+field_pad: 0.0                       # padding added to every field box (share of the document)
+# measuring instruments (rarely changed)
+lens_sigma_px: 0.6                   # blur of a SHARP phone photo in its own pixels; not counted as a defect
+default_text_height: 20.0            # text height assumed when a template has no field boxes, canonical px
+structure_lost: 0.35                 # print-structure agreement below this: something is covering the print
+structure_weak: 0.55                 # ... and cells below this next to a covered cell belong to the same object
+structure_min_cells: 3               # a covered patch smaller than this many grid cells is ignored

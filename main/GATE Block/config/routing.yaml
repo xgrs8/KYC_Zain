@@ -1,0 +1,6 @@
+# What happens around the decision.
+max_enhance_rounds: 2                # DocRes passes allowed per document (one task per pass)
+on_enhancement_failure: reject       # reject | review : still not good after the last pass
+docres_max_side: 1600                # advice passed to Block 2 with every enhance request
+review_enabled: true                 # false: every "review" becomes a retake request
+auto_swap_sides: true                # ID front and back uploaded the wrong way round are swapped

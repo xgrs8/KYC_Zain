@@ -1,0 +1,5 @@
+# How Laya's answer is used. The model itself is given on the command line (--laya PATH) or in code
+# (LayaBackend("PATH")), never here, so the same config works with and without the model.
+min_decision_confidence: 0.55        # Laya's top probability below this -> its answer is not used
+on_uncertain: rules                  # rules | review : who decides when Laya's answer is not usable
+max_state_chars: 700                 # hard cap on the compact JSON state handed to Laya

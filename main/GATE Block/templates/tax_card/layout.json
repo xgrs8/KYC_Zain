@@ -1,0 +1,17 @@
+{
+  "doc_type": "tax_card",
+  "rigid": true,
+  "sides": {
+    "single": {
+      "card": [0.022, 0.036, 0.978, 0.968],
+      "fields": {
+        "taxpayer_number": {"box": [0.43, 0.43, 0.7, 0.49], "critical": true},
+        "taxpayer_name": {"box": [0.42, 0.515, 0.76, 0.595], "critical": true},
+        "economic_activity": {"box": [0.44, 0.615, 0.76, 0.7], "critical": false},
+        "issue_date": {"box": [0.46, 0.725, 0.72, 0.785], "critical": false},
+        "expiry_date": {"box": [0.46, 0.807, 0.72, 0.868], "critical": true}
+      },
+      "ignore": [[0.055, 0.705, 0.195, 0.9]]
+    }
+  }
+}

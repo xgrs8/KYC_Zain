@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# model weights and training output stay out of git (the packed head is attached to a release instead)
+*.safetensors
+*.bin
+*.pt
+gate_laya/
+laya_data/
+calibration/
+out/

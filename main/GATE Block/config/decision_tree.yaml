@@ -1,0 +1,14 @@
+# Tie-breaks of the decision tree (gate_block/decision_tree.py). The branches themselves are fixed:
+#   accept -> TeleOCR | enhance -> DocRes (one task) | reject -> retake message | review -> a person
+# Every list must contain each name exactly once.
+
+# Equally serious retake reasons: the first one listed wins.
+reason_priority: [cut_off, obstructed, too_small, glare, overexposed, dark, blur, shadow, angle, other]
+
+# Equally well supported DocRes tasks: the first one listed wins.
+# The names are exactly the values of --task in the DocRes repository.
+operation_order: [dewarping, deblurring, deshadowing, appearance, binarization]
+
+# Tasks the deterministic rules never choose on their own (Laya may, when the evidence is there).
+# Binarization makes the page black and white, which destroys photos, stamps and colours.
+rules_never_choose: [binarization]

@@ -1,0 +1,13 @@
+# The deterministic rules: the safety net around Laya, the fallback when Laya is not usable,
+# and the baseline Laya has to beat. Severity words: mild | moderate | severe.
+enhance_at: mild                     # a defect DocRes can fix, at or above this, goes to DocRes
+reject_recoverable_at: severe        # blur / dark / low_contrast at or above this -> retake (too damaged)
+reject_unrecoverable_at:             # defects DocRes has no task for -> retake at this severity
+  cut: mild
+  obstruction: severe                # a hand or an object over a large part of the document
+  low_resolution: moderate
+  glare: severe
+  noise: severe
+max_moderate_unrecoverable: 2        # this many moderate unrecoverable defects together -> retake
+field_loss_at: moderate              # a field cut off / covered / in glare at this severity is lost
+reject_on_noncritical_field_loss: true   # false: only critical fields (layout.json) force a retake

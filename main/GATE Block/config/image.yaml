@@ -1,0 +1,6 @@
+# Intake: sizes of the copies the gate works on.
+min_side: 240               # shorter side below this -> "image too small"
+max_pixels: 100000000       # refuse bigger files (protection against decompression bombs)
+work_max_side: 2400         # working copy used for warping and measuring
+small_max_side: 900         # copy used to search for the document
+canonical_long_side: 1000   # every document is rectified to this long side before it is measured

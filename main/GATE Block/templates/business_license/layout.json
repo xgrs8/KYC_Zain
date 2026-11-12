@@ -1,0 +1,20 @@
+{
+  "doc_type": "business_license",
+  "rigid": false,
+  "sides": {
+    "single": {
+      "card": [0.02, 0.015, 0.99, 0.985],
+      "fields": {
+        "license_number": {"box": [0.6, 0.298, 0.78, 0.335], "critical": true},
+        "issue_date": {"box": [0.08, 0.298, 0.3, 0.335], "critical": false},
+        "company_name": {"box": [0.12, 0.435, 0.88, 0.495], "critical": true},
+        "company_type": {"box": [0.38, 0.505, 0.7, 0.545], "critical": false},
+        "capital": {"box": [0.4, 0.548, 0.7, 0.585], "critical": false},
+        "business_purposes": {"box": [0.4, 0.588, 0.7, 0.625], "critical": false},
+        "head_office": {"box": [0.38, 0.628, 0.7, 0.67], "critical": false},
+        "valid_until": {"box": [0.54, 0.716, 0.745, 0.754], "critical": true}
+      },
+      "ignore": []
+    }
+  }
+}

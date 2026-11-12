@@ -1,0 +1,27 @@
+# Gate 1: is this photo one of the supported documents?
+# A photo is "recognized" when its combined score reaches recognized_score and leads the runner-up
+# template by margin; "unsupported" when the score stays under unsupported_score; "uncertain" otherwise.
+max_candidates: 6                    # document-shaped outlines examined per photo
+min_area_frac: 0.025                 # an outline must cover at least this share of the frame
+aspect_sigma: 0.22                   # tolerance (log ratio) when comparing aspect ratios
+orb_features: 1500                   # keypoints detected in the rectified document
+orb_search_features: 6000            # keypoints spread over the whole photo when searching for the document
+orb_template_features: 6000          # keypoints detected in a template before keeping its static ones
+orb_static_max: 2500                 # static template keypoints kept (strongest first)
+ratio: 0.78                          # Lowe ratio test
+ransac_px: 4.0                       # RANSAC reprojection threshold, canonical pixels
+flexible_ransac_scale: 3.0           # paper documents may curl: looser threshold for non-rigid templates
+min_inliers: 12                      # fewer matching points than this = no feature evidence
+strong_inliers: 35                   # this many = full feature evidence
+min_inlier_spread: 0.025             # matches count as evidence when they span this share of the template
+align_inlier_spread: 0.20            # ... and may set the alignment only when they span this much
+lf_min: 0.30                         # layout similarity below this = no evidence
+lf_strong: 0.62                      # ... at or above this = full evidence
+lf_certain: 0.80                     # so similar that feature evidence is not needed (blurry photos)
+recognized_score: 0.55
+margin: 0.05
+unsupported_score: 0.25
+unsupported_max_direct_inliers: 22   # whole-photo matching at or above this vetoes "unsupported"
+rich_keypoints: 250                  # a sharp, detailed picture that matches nothing is "unsupported": it has
+rich_sharpness: 0.28                 #   at least rich_keypoints keypoints, this edge sharpness,
+rich_min_luminance: 70.0             #   and is not dark

@@ -1,0 +1,11 @@
+# GATE Block runtime (python -m gate_block ...). Tested with the versions in the comments.
+numpy>=1.24                     # 2.5.3
+opencv-python-headless>=4.8     # 5.0.0
+pillow>=10.0                    # 12.3.0
+pyyaml>=6.0                     # 6.0.3
+
+# Optional
+# laya==0.4.31                  # the decision model (install it in the environment that has your Laya)
+# torch, safetensors            # come with laya; needed for laya-train / laya-pack / laya-assemble
+# pillow-heif                   # iPhone HEIC uploads
+# pytest>=8                     # the test suite

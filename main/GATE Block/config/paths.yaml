@@ -1,0 +1,2 @@
+# Where the reference templates live (relative to the folder that contains config/).
+templates_dir: templates

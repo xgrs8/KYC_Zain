@@ -1,0 +1,7 @@
+# Front + back merge of the national ID. The same rule as A.L.G (rfalib/merge.py):
+# both sides are brought to one width (never smaller than the larger upload), front on top,
+# a white band, back below. With these values front.jpg + back.jpg give ID_23.png pixel for pixel.
+target_width: 1600                   # = A.L.G's merge_width used for the dataset
+gap_px: 24                           # height of the white band
+background: 255                      # grey level of the band
+resample: lanczos                    # lanczos | bicubic | bilinear
