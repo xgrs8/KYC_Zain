@@ -117,8 +117,13 @@ def label_sidecar(*, doc_id: str, photo: str, doc_type: str, labeler: str,
                   truth_ref: str | None = None, split: str | None = None,
                   synthetic: bool = False,
                   skipped: str | None = None,
-                  warnings_overridden: list[str] | None = None) -> dict[str, Any]:
-    """Build the label sidecar object (6.5)."""
+                  warnings_overridden: list[str] | None = None,
+                  known_deviations: list[str] | None = None) -> dict[str, Any]:
+    """Build the label sidecar object (6.5).
+
+    ``known_deviations``: the fields whose format the truth sidecar declares
+    as a known deviation of the print run (their values were checked against
+    the declared format instead of the schema's)."""
     for key, status in field_status.items():
         if status not in FIELD_STATUS:
             raise ValueError(f"bad field status {status!r} for {key}")
@@ -144,6 +149,8 @@ def label_sidecar(*, doc_id: str, photo: str, doc_type: str, labeler: str,
         out["skipped"] = skipped
     if warnings_overridden:
         out["warnings_overridden"] = warnings_overridden
+    if known_deviations:
+        out["known_deviations"] = known_deviations
     return out
 
 

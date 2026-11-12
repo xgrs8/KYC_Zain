@@ -129,11 +129,19 @@ class LabelSession:
                                  f"or exactly {UNREADABLE}.")
         return problems
 
+    def known_deviations(self) -> dict[str, dict]:
+        """Formats the print run of this sample is known to use (truth sidecar
+        ``known_deviations``), only for this document's label fields."""
+        if not self.truth:
+            return {}
+        dev = self.truth.get("known_deviations") or {}
+        return {k: v for k, v in dev.items() if k in self.fields and isinstance(v, dict)}
+
     def warnings(self) -> dict[str, str]:
         """Warn-level regex mismatches (overridable, logged)."""
         return field_warnings(self.doc_type, {
             k: v for k, v in self.fields.items()
-            if self.field_state(k) == "filled"})
+            if self.field_state(k) == "filled"}, self.known_deviations())
 
     # ------------------------------------------------------------ outputs (8.5)
     def _output_base(self) -> str:
@@ -217,7 +225,8 @@ class LabelSession:
             truth_disagreements=disagreements or None,
             conditions=list(self.conditions) or None,
             truth_ref=self.truth_ref, split=split, synthetic=synthetic,
-            warnings_overridden=self.warnings_overridden or None)
+            warnings_overridden=self.warnings_overridden or None,
+            known_deviations=sorted(self.known_deviations()) or None)
         sidecar_path = out_dir / f"{base}.label.sidecar.json"
         SC.write_json(sidecar_path, sidecar)
         return {"base": base, "image": str(image_path), "label": str(label_path),

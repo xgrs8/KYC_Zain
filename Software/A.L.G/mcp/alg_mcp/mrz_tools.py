@@ -25,6 +25,7 @@ from __future__ import annotations
 import difflib
 import itertools
 import re
+from collections.abc import Iterable
 
 from rfalib import mrz as RM
 
@@ -201,8 +202,12 @@ def names_agree(printed: list[str], l3: str) -> bool:
     return False
 
 
-def consistency(fields: dict[str, str]) -> list[dict]:
-    """Cross-check the MRZ against the visual fields. Returns only the FAILED checks (soft flags)."""
+def consistency(fields: dict[str, str], skip: Iterable[str] = ()) -> list[dict]:
+    """Cross-check the MRZ against the visual fields. Returns only the FAILED checks (soft flags).
+
+    ``skip``: checks a print run is known to fail on every card (declared in its truth sidecar), e.g.
+    ``names_vs_mrz`` when the surname row holds a placeholder."""
+    skip = set(skip)
     lines = [fields.get(k) for k in LINE_KEYS]
     if any(not v or v == UNREADABLE or len(v) != 30 for v in lines):
         return []
@@ -215,7 +220,8 @@ def consistency(fields: dict[str, str]) -> list[dict]:
     failed: list[dict] = []
 
     def fail(check: str, visual: str, detail: str) -> None:
-        failed.append({"check": check, "fields": [visual, "mrz"], "detail": detail})
+        if check not in skip:
+            failed.append({"check": check, "fields": [visual, "mrz"], "detail": detail})
 
     if (v := readable("card_serial")) is not None:
         if l1[5:14].rstrip("<") != v.upper().replace(" ", ""):

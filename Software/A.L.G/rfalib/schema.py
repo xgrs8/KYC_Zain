@@ -89,21 +89,36 @@ def is_unreadable(value: str) -> bool:
     return value == UNREADABLE
 
 
-def field_warnings(doc_type: str, fields: dict[str, str]) -> dict[str, str]:
+def field_warnings(doc_type: str, fields: dict[str, str],
+                   deviations: dict[str, dict[str, Any]] | None = None) -> dict[str, str]:
     """Warn-level regex validation (8.4). Returns {key: warning}.
 
     A field that is exactly [UNREADABLE] never warns.  Pattern mismatches
     produce a human-readable warning; the labeler can override (logged).
+
+    ``deviations`` are the formats a print run is known to use instead
+    (truth sidecar ``known_deviations``: {key: {"pattern", "why"}}).  A value
+    that matches the declared pattern is what that print run prints, so it
+    does not warn; a value that matches neither still does.
     """
+    deviations = deviations or {}
     warnings: dict[str, str] = {}
     for meta in SCHEMAS[doc_type]:
         value = (fields.get(meta["key"]) or "").strip()
         if not value or value == UNREADABLE:
             continue
-        if not re.match(meta["pattern"], value):
-            warnings[meta["key"]] = (
-                f"Value does not match the expected format for "
-                f"{meta['key']} (e.g. pattern {meta['pattern']}).")
+        if re.match(meta["pattern"], value):
+            continue
+        dev = deviations.get(meta["key"]) or {}
+        if dev.get("pattern") and re.match(dev["pattern"], value):
+            continue
+        msg = (f"Value does not match the expected format for "
+               f"{meta['key']} (e.g. pattern {meta['pattern']}).")
+        if dev.get("pattern"):
+            msg += (f" This print run is known to print {dev['pattern']}"
+                    f" ({dev.get('why', 'declared in the truth sidecar')}): "
+                    f"the value matches neither.")
+        warnings[meta["key"]] = msg
     return warnings
 
 

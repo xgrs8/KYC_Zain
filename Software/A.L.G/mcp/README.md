@@ -31,9 +31,14 @@ alg_mcp  ──►  rules (readable / [UNREADABLE]), claims, MRZ checks, blind r
    and it never asks an agent to change a character it read correctly or to mark a readable line unreadable: the label is what is printed. Printed cards
    can carry a wrong check digit (81 of the 90 IDs in this project's ground truth have a composite check digit that the ICAO formula does not give), so a
    composite-only mismatch asks for a re-check and a confirmation, and an agent that is certain of a line that fails another check keeps it with a `format_exception`.
-6. **Agents can only touch samples you registered.** No tool takes a file path. You register images with the CLI.
-7. **Optional redundancy:** `--redundancy 2` needs two *different* agents to agree on every field; disagreement → `needs_human`.
-8. **Audit trail:** `alg_mcp_audit.jsonl` (every tool call, no values), `X.label.ai.json` (agents, reasons, views/zooms, flags), sidecar `labeler = "ai:<agent>"`.
+6. **Known formats of a print run.** A truth sidecar may declare `known_deviations`: the formats a print run really uses (this project's
+   print run has 13-digit national numbers, «ل.س» on the licences, a placeholder in the ID surname row, a non-ICAO composite digit ...;
+   see [the A.L.G README](../README.md#labeling-the-photographed-print-run)). A value that fits the declared format needs no
+   `format_exception`, and the MRZ checks the print run fails on every card (`names_vs_mrz`, `composite_check_digit`) are not applied.
+   Only patterns and check names are used, never a value, so labeling stays blind; the audit lists the fields that used a declared format.
+7. **Agents can only touch samples you registered.** No tool takes a file path. You register images with the CLI.
+8. **Optional redundancy:** `--redundancy 2` needs two *different* agents to agree on every field; disagreement → `needs_human`.
+9. **Audit trail:** `alg_mcp_audit.jsonl` (every tool call, no values), `X.label.ai.json` (agents, reasons, views/zooms, flags), sidecar `labeler = "ai:<agent>"`.
 
 Research behind these choices: vision-language models *guess* instead of abstaining (arXiv 2605.27750), AI labels need a human-checked sample
 (alt-test 2501.10970, PAC labeling 2506.10908), AI pre-labels + human review saves 68–81 % of the time (GAIDA 2610.26362), and TeleOCR's own
@@ -167,6 +172,7 @@ on every field; otherwise the sample is `needs_human`: `python run_alg_mcp.py re
 | ID: MRZ disagrees with a visual field (serial, national id when line 1 has optional data, dates, sex, names) | `needs_confirmation`: agent must re-inspect, then `confirm=true`. Names are compared by their consonants, because the MRZ spells them with vowels (`الربيعي` → `ALRUBAIE`) |
 | Many fields unreadable, or all of them | `needs_confirmation` (zoom first / skip the sample) |
 | Another agent holds the sample | not offered; claims expire after 45 min (`ALG_MCP_LEASE_MINUTES`) |
+| Several photos of one document carry the same number (`ID_01_glare`, `ID_01_blur`) | the first keeps `ID_01`, the next ones take the next free number (nothing is overwritten; the sidecar keeps the source). `tools/prepare_photos.py` gives every photo its own number |
 
 ## Tools
 

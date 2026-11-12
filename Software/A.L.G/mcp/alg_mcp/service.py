@@ -23,6 +23,7 @@ from typing import Any
 from alg.label import LabelSession
 from rfalib import naming as NM
 from rfalib import schema as S
+from rfalib import sidecar as SC
 from rfalib.constants import CONDITION_TAGS, DOC_TYPES
 from rfalib.normalize import same
 
@@ -264,6 +265,25 @@ class Service:
             return None, "brackets look like a note, not printed text: type only what is printed (or mark_unreadable)"
         return v, None
 
+    @staticmethod
+    def _deviations(s: dict) -> dict[str, dict]:
+        """Formats the sample's print run is known to use instead of the schema's (``known_deviations`` of
+        its truth sidecar). Only patterns and check names: never a value, so blind labeling stays blind."""
+        path = SC.find_truth_sidecar(Path(s["front"])) or (
+            SC.find_truth_sidecar(Path(s["back"])) if s.get("back") else None)
+        if path is None:
+            return {}
+        try:
+            dev = SC.read_json(path).get("known_deviations") or {}
+        except (OSError, ValueError):
+            return {}
+        return {k: {"pattern": v.get("pattern"), "why": v.get("why"), "skip_checks": list(v.get("skip_checks") or [])}
+                for k, v in dev.items() if isinstance(v, dict)}
+
+    @staticmethod
+    def _skipped_checks(devs: dict[str, dict]) -> set[str]:
+        return {c for d in devs.values() for c in d.get("skip_checks") or []}
+
     def set_fields(self, sample_id: str, values: dict | None = None, unreadable: dict | None = None,
                    format_exceptions: dict | None = None, agent: str | None = None) -> dict:
         agent = self._agent(agent)
@@ -275,6 +295,7 @@ class Service:
             s = self._find(st, sample_id)
             draft = self._draft(st, s, agent)
             keys = set(self._keys(s["doc_type"]))
+            devs = self._deviations(s)
             for key, raw in values.items():
                 if key not in keys:
                     rejected[key] = f"unknown field for {s['doc_type']}; valid keys: {sorted(keys)}"
@@ -286,7 +307,7 @@ class Service:
                 draft["fields"][key] = v
                 draft["reasons"].pop(key, None)
                 draft["notes"].pop(key, None)
-                warn = S.field_warnings(s["doc_type"], {key: v}).get(key)
+                warn = S.field_warnings(s["doc_type"], {key: v}, devs).get(key)
                 exc = (format_exceptions.get(key) or "").strip()
                 if warn and len(exc) >= 8:
                     draft["exceptions"][key] = exc
@@ -427,11 +448,13 @@ class Service:
                                   "(it goes to human review). Use mark_unreadable only if you really cannot "
                                   "read the line.")
         flags: list[dict] = []
-        if mrz and mrz.get("checked") and mrz.get("warnings") and not excepted:
+        skipped = self._skipped_checks(self._deviations(s))
+        if mrz and mrz.get("checked") and mrz.get("warnings") and not excepted \
+                and "composite_check_digit" not in skipped:
             flags += [{"kind": "mrz_check_digit", "check": "composite_check_digit", "fields": ["mrz_line2"],
                        "detail": w} for w in mrz["warnings"]]
         if s["doc_type"] == "ID":
-            flags += [{"kind": "mrz_consistency", **f} for f in mrz_tools.consistency(draft["fields"])]
+            flags += [{"kind": "mrz_consistency", **f} for f in mrz_tools.consistency(draft["fields"], skipped)]
         total = len(keys)
         if prog["resolved"] == total and prog["unreadable"] == total:
             flags.append({"kind": "all_unreadable", "detail": "every field is unreadable: is this a usable "
@@ -482,7 +505,12 @@ class Service:
             if s["doc_type"] != "ID":
                 raise ToolError("only ID documents have an MRZ")
             out = self._mrz(s, draft) or {}
-            out["consistency_with_visual_fields"] = mrz_tools.consistency(draft["fields"]) or "no mismatch found"
+            skipped = self._skipped_checks(self._deviations(s))
+            out["consistency_with_visual_fields"] = (mrz_tools.consistency(draft["fields"], skipped)
+                                                     or "no mismatch found")
+            if skipped:
+                out["checks_not_applied"] = sorted(skipped) + [
+                    "(this print run is known to fail them on every card: they say nothing about your reading)"]
             return out
 
     # ================================================================== submit
@@ -556,9 +584,10 @@ class Service:
         m = _SOURCE_RE.match(s["name"])
         if m and m.group(1).upper() == s["doc_type"]:
             base = NM.doc_name(s["doc_type"], int(m.group(2)))
-            if self._exists(self.cfg.out_dir, base):
-                raise ToolError(f"{base} already exists in {self.cfg.out_dir}: not overwriting")
-            return base
+            if not self._exists(self.cfg.out_dir, base) and not self._exists(self.cfg.human_dir, base):
+                return base
+            # Several photos of one document can carry the same source number (ID_01_glare, ID_01_blur):
+            # never overwrite, take the next free number like the app does (the sidecar keeps the source).
         while True:
             base = NM.doc_name(s["doc_type"], NM.take_next(self.cfg.workspace, s["doc_type"]))
             if not self._exists(self.cfg.out_dir, base) and not self._exists(self.cfg.human_dir, base):
@@ -643,6 +672,9 @@ class Service:
             "unreadable_count": unread,
             "review": {"state": state, "reasons": reasons, "decided_by": None, "decided_at": None},
         }
+        devs = self._deviations(s)
+        if devs:
+            audit["known_deviations"] = {k: v.get("why") for k, v in sorted(devs.items())}
         return audit, state, reasons
 
     def skip_sample(self, sample_id: str, reason: str, agent: str | None = None) -> dict:

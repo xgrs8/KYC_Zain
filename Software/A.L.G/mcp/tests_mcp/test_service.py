@@ -332,3 +332,72 @@ def test_external_photo_gets_a_counter_name_in_the_app_style(ws, tmp_path):
     assert res["status"] == "done" and res["label_base"] == "LIC_01"
     ai = json.loads((svc.cfg.out_dir / "LIC_01.label.ai.json").read_text("utf-8"))
     assert ai["review"]["state"] == "needs_review"                          # no reference values, single agent
+
+
+# ------------------------------------------------------------------ a print run with declared deviations
+PRINT_RUN_ROW = {
+    "identity_id": "001", "first": "ديار", "father": "آرام", "grandfather": "بلال", "mother": "مريم",
+    "surname": "الربيعي", "sex": "ذكر", "blood": "A+", "dob": "1973/01/31", "pob": "كركوك",
+    "issue_office": "صلاح الدين", "issue_date": "2020/05/03", "expiry_date": "2030/05/03",
+    "doc_number": "DV8752051", "national_number_front": "9836146454363",
+    "national_number_back": "5200N1W26815209887", "mrz_line1": "IDIRQDV87520514<<<<<<<<<<<<<<<",
+    "mrz_line2": "7301315M3005039IRQ<<<<<<<<<<<3", "mrz_line3": "ALRUBAIE<<DIYAR<ARAM<BILAL<<<<",
+}
+
+
+def _print_run(tmp_path, ws):
+    from rfalib import printed_truth as PT
+    d = tmp_path / "printrun"
+    make_image(d / "ID_101_glare_front.png", label="front")
+    make_image(d / "ID_101_glare_back.png", label="back")
+    t = PT.truth_for("ID", PRINT_RUN_ROW)
+    (d / "ID_101.truth.json").write_text(json.dumps(
+        {"printed": t["printed"], "intended": t["intended"], "defects": t["defects"], "split": "train",
+         "synthetic": True, "known_deviations": t["known_deviations"]}, ensure_ascii=False), encoding="utf-8")
+    svc = new_service(ws)
+    assert svc.add_paths([str(d)])["added"] == 1
+    return svc, {k: v for k, v in t["printed"].items() if k in S.label_keys("ID")}
+
+
+def test_declared_print_run_formats_need_no_exception(tmp_path, ws):
+    svc, printed = _print_run(tmp_path, ws)
+    sid = claim(svc, name="ID_101_glare")["sample_id"]
+    out = svc.set_fields(sid, printed, agent="agentA")
+    assert out["needs_format_decision"] == {} and not out["rejected"], out
+    view_all(svc, sid, "agentA", ("front", "back"))
+    rep = svc.validate_sample(sid, "agentA")
+    assert rep["ready_to_submit"] and rep["flags"] == [], rep          # no composite / names_vs_mrz flag
+    assert "names_vs_mrz" in svc.mrz_check(sid, agent="agentA")["checks_not_applied"]
+    res = svc.submit_label(sid, "agentA")
+    assert res["status"] == "done" and res["label_base"] == "ID_101" and res["review_state"] == "auto_ok", res
+    ai = json.loads((svc.cfg.out_dir / "ID_101.label.ai.json").read_text("utf-8"))
+    assert "national_id_number" in ai["known_deviations"]
+    side = json.loads((svc.cfg.out_dir / "ID_101.label.sidecar.json").read_text("utf-8"))
+    assert "family_number" in side["known_deviations"]
+
+
+def test_a_value_that_fits_neither_format_still_needs_a_decision(tmp_path, ws):
+    svc, printed = _print_run(tmp_path, ws)
+    sid = claim(svc, name="ID_101_glare")["sample_id"]
+    out = svc.set_fields(sid, {"national_id_number": "98361464543"}, agent="agentA")      # 11 digits
+    assert "national_id_number" in out["needs_format_decision"]
+    blob = json.dumps(out, ensure_ascii=False)
+    assert printed["national_id_number"] not in blob and printed["surname"] not in blob   # still blind
+
+
+def test_several_photos_of_one_card_get_free_names(ws, tmp_path):
+    d = tmp_path / "photos"
+    for cond in ("glare", "blur"):
+        make_image(d / f"TAX_03_{cond}.png", size=(800, 560), label=cond)
+    svc = new_service(ws)
+    assert svc.add_paths([str(d)])["added"] == 2
+    bases = []
+    for cond in ("blur", "glare"):
+        sid = claim(svc, name=f"TAX_03_{cond}")["sample_id"]
+        svc.set_fields(sid, dict(TAX_VALUES), agent="agentA")
+        svc.view_sample(sid, "front", agent="agentA")
+        res = svc.submit_label(sid, "agentA", confirm=True)
+        assert res["status"] == "done", res
+        bases.append(res["label_base"])
+    assert bases[0] == "TAX_03" and bases[1] != "TAX_03"            # the second photo is not overwritten
+    assert (svc.cfg.out_dir / f"{bases[1]}.label.json").exists()
