@@ -309,19 +309,28 @@ def cmd_doctor(args) -> int:
             t0 = time.perf_counter()
             backend = LayaBackend(args.laya, device=args.device, calibration=args.laya_calibration)
             load_s = time.perf_counter() - t0
-            states = {"clean": '{"doc":"tax_card"}', "severe blur": '{"doc":"tax_card","blur":"severe","crit":{"taxpayer_number":"blur:severe"}}',
-                      "mild shadow": '{"doc":"tax_card","shadow":"mild"}'}
-            lines, tops = [], []
-            for name, state in states.items():
+            # states as the gate builds them (with the permitted branches), and the rules' answer for each
+            states = {
+                "clean": ('{"doc":"tax_card","allowed":["accept"]}', "accept"),
+                "severe blur": ('{"doc":"tax_card","blur":"severe","crit":{"taxpayer_number":"blur:severe"},'
+                                '"oth":["blur:severe"],"allowed":["reject:blur"]}', "reject"),
+                "moderate shadow": ('{"doc":"tax_card","shadow":"moderate",'
+                                    '"allowed":["enhance:deshadowing","reject:shadow"]}', "enhance"),
+            }
+            lines, tops, agree = [], [], 0
+            for name, (state, rules_answer) in states.items():
                 t1 = time.perf_counter()
                 ans = backend.decide(state, QUESTIONS)
                 ms = (time.perf_counter() - t1) * 1000.0
                 top = ans.top("decision")
                 tops.append(top)
+                agree += top == rules_answer
                 lines.append(f"{name}: {top} ({ans.probs['decision'][top]:.2f}), {ms:.0f} ms")
-            verdict = ("answers differ between states" if len(set(tops)) > 1 else
-                       "SAME answer for every state: this checkpoint is not fine-tuned for the gate yet "
-                       "(the router keeps it inside what the measurements allow)")
+            if len(set(tops)) == 1:
+                verdict = ("SAME answer for every state: this checkpoint is not fine-tuned for the gate yet "
+                           "(the router keeps it inside what the measurements allow)")
+            else:
+                verdict = f"agrees with the rules on {agree} of {len(states)} probe states"
             return f"loaded in {load_s:.1f}s; " + "; ".join(lines) + f" -> {verdict}"
         check("Laya answers the gate's questions", laya)
     else:

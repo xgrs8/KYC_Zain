@@ -119,6 +119,29 @@ def test_cli_doctor_with_a_model_that_cannot_be_loaded(capsys, tmp_path):
     assert code == 1 and "[FAIL] Laya answers the gate's questions" in out
 
 
+@pytest.mark.parametrize("policy, expected", [
+    ("first_allowed", "agrees with the rules on 3 of 3 probe states"),
+    ("always_accept", "SAME answer for every state"),
+])
+def test_cli_doctor_probes_laya_with_the_gate_s_own_states(capsys, monkeypatch, policy, expected):
+    import gate_block.laya_client as LC
+    seen = []
+
+    def answer(state):
+        seen.append(state)
+        if policy == "always_accept":
+            return onehot("accept", confidence=0.95)
+        branch = state["allowed"][0]
+        decision, _, detail = branch.partition(":")
+        return onehot(decision, reason=detail or "other", task=detail if decision == "enhance" else "deblurring",
+                      confidence=0.95)
+
+    monkeypatch.setattr(LC, "LayaBackend", lambda *a, **k: StaticBackend(answer))
+    code, out, _ = run_cli(capsys, "doctor", "--laya", "fake_checkpoint")
+    assert code == 0 and expected in out
+    assert all("allowed" in s for s in seen)                   # states as the gate builds them
+
+
 def test_cli_reports_errors_without_a_traceback(capsys, tmp_path):
     code, out, err = run_cli(capsys, "check", "photo.jpg", "--templates", tmp_path / "nope")
     assert code == 2 and "TemplateError" in err and "Traceback" not in err
