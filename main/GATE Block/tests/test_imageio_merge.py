@@ -210,6 +210,57 @@ def test_merge_is_identical_to_alg():
     assert np.array_equal(np.asarray(merge_pil(rgba, grey, CFG.id_merge).convert("RGB")), theirs)
 
 
+def _alg_module(name: str):
+    """A module of A.L.G's rfalib (``merge``, ``constants``), when the KYC_Zain repository is around."""
+    import importlib
+    candidates = [os.environ.get("ALG_PATH"), ROOT.parent.parent / "Software" / "A.L.G", ROOT.parent / "kyc_zain" / "Software" / "A.L.G"]
+    for c in candidates:
+        if c and (Path(c) / "rfalib" / "merge.py").is_file():
+            sys.path.insert(0, str(c))
+            try:
+                return importlib.import_module(f"rfalib.{name}")
+            except Exception:
+                return None
+            finally:
+                sys.path.remove(str(c))
+    return None
+
+
+def test_merging_files_is_identical_to_alg_also_for_rotated_phone_photos(tmp_path):
+    """The dataset's IDs are merged by A.L.G's merge_files, the uploads by the gate: same files, same pixels."""
+    alg = _alg_module("merge")
+    if alg is None:
+        pytest.skip("A.L.G (rfalib.merge) not found next to this folder; set ALG_PATH to Software/A.L.G to run this check")
+    upright_f = np.asarray(Image.open(FRONT).convert("RGB"))
+    upright_b = np.asarray(Image.open(BACK).convert("RGB"))
+    cases = {"no tag": (FRONT, BACK)}
+    for tag, turn in ((6, 1), (8, -1), (3, 2)):              # stored sideways / upside down, EXIF says how to show it
+        exif = Image.Exif()
+        exif[0x0112] = tag
+        pair = []
+        for name, arr, fmt in (("f", upright_f, "JPEG"), ("b", upright_b, "PNG")):
+            path = tmp_path / f"{name}_{tag}.{fmt.lower()}"
+            Image.fromarray(np.ascontiguousarray(np.rot90(arr, turn))).save(path, fmt, exif=exif, **({"quality": 95} if fmt == "JPEG" else {}))
+            pair.append(path)
+        cases[f"orientation {tag}"] = tuple(pair)
+    for name, (f, b) in cases.items():
+        out = tmp_path / f"alg_{name.replace(' ', '_')}.png"
+        alg.merge_files(f, b, out, width=CFG.id_merge.target_width, gap=CFG.id_merge.gap_px)
+        theirs = np.asarray(Image.open(out).convert("RGB"))
+        ours = merge_id(f, b, CFG.id_merge).image[:, :, ::-1]
+        assert ours.shape == theirs.shape and np.array_equal(ours, theirs), name
+    assert np.array_equal(np.asarray(Image.open(tmp_path / "alg_no_tag.png").convert("RGB")),
+                          np.asarray(Image.open(REFERENCE).convert("RGB")))     # and both equal ID_23.png
+
+
+def test_the_merge_width_is_the_same_as_alg_s_default():
+    constants = _alg_module("constants")
+    if constants is None:
+        pytest.skip("A.L.G (rfalib.constants) not found next to this folder; set ALG_PATH to Software/A.L.G")
+    assert CFG.id_merge.target_width == constants.MERGE_DEFAULT_WIDTH
+    assert CFG.id_merge.gap_px == constants.MERGE_DEFAULT_GAP
+
+
 # ---------------------------------------------------------------------- splitting a merged image again
 def test_split_finds_the_band_of_the_reference():
     m = split_merged(cv2.imread(str(REFERENCE)), CFG.id_merge)

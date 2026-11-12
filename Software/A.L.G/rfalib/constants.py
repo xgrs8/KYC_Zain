@@ -45,7 +45,7 @@ VALIDITY_YEARS = {"ID": 10, "TAX": 5, "LIC": 5}  # expiry = issue + Ny - 1d
 AGE_MIN, AGE_MAX = 18, 85  # plausible age at issue
 
 # ---------------------------------------------------------------- merge (D11)
-MERGE_DEFAULT_WIDTH = 1140  # px, = 3x plate width; configurable 1000-1600
+MERGE_DEFAULT_WIDTH = 1600  # px; = the project dataset and the GATE Block (main/GATE Block/config/id_merge.yaml); configurable 1000-1600
 MERGE_MIN_WIDTH = 1000
 MERGE_MAX_WIDTH = 1600
 MERGE_DEFAULT_GAP = 24  # px white gap between front and back

@@ -47,7 +47,7 @@ class Config:
     expose_truth: bool = False
     lease_minutes: int = 45
     max_unreadable_ratio: float = 0.4
-    merge_width: int = 1140
+    merge_width: int = 1600             # = rfalib.constants.MERGE_DEFAULT_WIDTH and the GATE Block
     merge_gap: int = 24
     jpeg: bool = False
 

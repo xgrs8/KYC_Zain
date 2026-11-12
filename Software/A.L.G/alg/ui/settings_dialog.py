@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from rfalib.constants import MERGE_DEFAULT_GAP, MERGE_DEFAULT_WIDTH
+
 
 class SettingsDialog(QDialog):
     def __init__(self, settings: dict, parent=None):
@@ -34,11 +36,11 @@ class SettingsDialog(QDialog):
         self.width_spin = QSpinBox()
         self.width_spin.setRange(1000, 1600)
         self.width_spin.setSingleStep(20)
-        self.width_spin.setValue(int(settings.get("merge_width", 1140)))
+        self.width_spin.setValue(int(settings.get("merge_width", MERGE_DEFAULT_WIDTH)))
         mform.addRow("Merged width (px, 1000-1600):", self.width_spin)
         self.gap_spin = QSpinBox()
         self.gap_spin.setRange(0, 80)
-        self.gap_spin.setValue(int(settings.get("merge_gap", 24)))
+        self.gap_spin.setValue(int(settings.get("merge_gap", MERGE_DEFAULT_GAP)))
         mform.addRow("White gap (px):", self.gap_spin)
         layout.addWidget(merge_box)
 

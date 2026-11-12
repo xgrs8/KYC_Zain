@@ -64,10 +64,12 @@ any sample. **Skip** requires a reason and writes the sidecar only.
 
 **Merge width.** The ID merge scales both sides to one width (Settings →
 merge width, 1000-1600 px; never smaller than the larger upload). The
-project dataset and the GATE Block (`main/GATE Block/config/id_merge.yaml`)
-use **1600**; keep the two equal so that labelled images and the images the
-gate hands to OCR have the same geometry. Phone photos are merged upright
-(their EXIF rotation is applied), as every viewer shows them.
+default is **1600**, the width of the project dataset and of the GATE Block
+(`main/GATE Block/config/id_merge.yaml`): with the same width an ID merged
+here and one merged by the gate are the same pixels (a test in the GATE
+Block checks it on phone photos). Keep them equal if you change either.
+Phone photos are merged upright (their EXIF rotation is applied), as every
+viewer shows them.
 
 ## Outputs (workspace `labeled/`)
 

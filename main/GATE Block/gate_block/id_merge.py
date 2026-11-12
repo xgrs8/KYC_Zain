@@ -7,13 +7,12 @@ step, so the Gate Block hands TeleOCR exactly the kind of image the dataset was 
     * a side whose width differs is resized to it with PIL LANCZOS, height = round(h * width / w);
     * the front goes on top and the back below, separated by a ``gap_px`` pure-white band.
 
-``target_width`` must equal the ``merge_width`` setting A.L.G used for the dataset. The reference pair
-front.jpg + back.jpg -> ID_23.png was made at 1600, and this module reproduces that file pixel for pixel
-(``tests/test_id_merge.py``; the same test checks parity with ``rfalib.merge`` when it can be imported).
-
-One deliberate difference: the EXIF orientation of an upload is applied first, so a photo taken with the
-phone upright is not merged lying on its side. For photos without an orientation tag the result is
-identical to A.L.G's.
+``target_width`` must equal the ``merge_width`` setting A.L.G used for the dataset (1600, also A.L.G's
+default). The reference pair front.jpg + back.jpg -> ID_23.png was made at 1600, and this module reproduces
+that file pixel for pixel. Like A.L.G's ``merge_files``, the EXIF orientation of each upload is applied
+first, so a phone photo stored sideways is merged upright. ``tests/test_imageio_merge.py`` checks all of it
+against ``rfalib.merge`` itself when A.L.G can be imported: the function on many sizes and image modes,
+whole files with and without an orientation tag, and the default width.
 
 The merge does not crop or straighten anything. The Gate Block runs it right after Gate 1 (the upload
 check) and before the quality gate.

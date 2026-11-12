@@ -1,9 +1,12 @@
 """Front+back image merge for A.L.G ID labels.
 
 Front stacked ABOVE back; common width = the wider side scaled to the
-target width (default 1140 px); 24 px white gap; never downscale the
-larger side; PNG output (JPEG q95 optional). The same function is used
-for every generated ID label so output geometry remains consistent.
+target width (default 1600 px, the width of the project dataset); 24 px
+white gap; never downscale the larger side; EXIF rotation applied; PNG
+output (JPEG q95 optional). The same function is used for every generated
+ID label so output geometry remains consistent, and the GATE Block
+(main/GATE Block/gate_block/id_merge.py) repeats it step for step: an ID
+merged here and one merged by the gate are the same pixels.
 """
 from __future__ import annotations
 

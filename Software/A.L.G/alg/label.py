@@ -20,7 +20,7 @@ from PIL import Image
 from rfalib import merge as M
 from rfalib import naming
 from rfalib import sidecar as SC
-from rfalib.constants import CONDITION_TAGS, UNREADABLE
+from rfalib.constants import CONDITION_TAGS, MERGE_DEFAULT_GAP, MERGE_DEFAULT_WIDTH, UNREADABLE
 from rfalib.normalize import same
 from rfalib.schema import build_label, field_warnings, label_keys, validate_label
 from rfalib.sidecar import find_truth_sidecar
@@ -164,7 +164,7 @@ class LabelSession:
                    for suffix in (".png", ".jpg", ".label.json",
                                   ".label.sidecar.json"))
 
-    def generate(self, merge_width: int = 1140, merge_gap: int = 24,
+    def generate(self, merge_width: int = MERGE_DEFAULT_WIDTH, merge_gap: int = MERGE_DEFAULT_GAP,
                  jpeg: bool = False, labeler: str | None = None) -> dict:
         """Merge (ID only), save the image(s) + label JSON + sidecar.
 

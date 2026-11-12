@@ -39,6 +39,8 @@ from rfalib.constants import (
     APP_VERSION,
     DOC_TYPE_ARABIC,
     DOC_TYPE_LABELS,
+    MERGE_DEFAULT_GAP,
+    MERGE_DEFAULT_WIDTH,
     QUEUE_STATES,
 )
 from rfalib.schema import label_keys, validate_label
@@ -375,8 +377,8 @@ class ALGWindow(QMainWindow):
             self._session.warnings_overridden = sorted(warnings)
         try:
             result = self._session.generate(
-                merge_width=int(self._settings.get("merge_width", 1140)),
-                merge_gap=int(self._settings.get("merge_gap", 24)),
+                merge_width=int(self._settings.get("merge_width", MERGE_DEFAULT_WIDTH)),
+                merge_gap=int(self._settings.get("merge_gap", MERGE_DEFAULT_GAP)),
                 jpeg=bool(self._settings.get("jpeg_option", False)),
                 labeler=self._settings.get("labeler", "") or None)
         except Exception as exc:  # noqa: BLE001
