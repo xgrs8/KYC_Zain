@@ -1,0 +1,73 @@
+{
+  "rows_before_dedup": 5204,
+  "unique_states": 3469,
+  "states_with_conflicting_labels": 0,
+  "skipped": {
+    "laya_not_asked": 7,
+    "stopped_before_quality": 1
+  },
+  "train": {
+    "rows": 3367,
+    "origin": {
+      "synthetic_enhance": 1157,
+      "synthetic": 2077,
+      "simulated_photo": 117,
+      "photo": 16
+    },
+    "decision": {
+      "enhance": 1656,
+      "reject": 1472,
+      "accept": 239
+    },
+    "reject_reason": {
+      "shadow": 26,
+      "other": 100,
+      "blur": 82,
+      "obstructed": 257,
+      "too_small": 128,
+      "cut_off": 400,
+      "glare": 228,
+      "dark": 178,
+      "angle": 19,
+      "overexposed": 54
+    },
+    "docres_task": {
+      "appearance": 571,
+      "deshadowing": 466,
+      "deblurring": 493,
+      "dewarping": 126
+    }
+  },
+  "eval": {
+    "rows": 625,
+    "origin": {
+      "photo": 2,
+      "simulated_photo": 29,
+      "synthetic": 400,
+      "synthetic_enhance": 194
+    },
+    "decision": {
+      "accept": 68,
+      "reject": 277,
+      "enhance": 280
+    },
+    "reject_reason": {
+      "glare": 39,
+      "dark": 42,
+      "obstructed": 45,
+      "blur": 15,
+      "cut_off": 72,
+      "too_small": 18,
+      "overexposed": 12,
+      "other": 23,
+      "shadow": 9,
+      "angle": 2
+    },
+    "docres_task": {
+      "deblurring": 96,
+      "deshadowing": 79,
+      "appearance": 83,
+      "dewarping": 22
+    }
+  }
+}
