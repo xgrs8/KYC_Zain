@@ -1,8 +1,9 @@
-"""Build a fine-tuning set for Laya from your photos (and, optionally, simulated ones).
+"""Build a training set for Laya from your photos (and, optionally, simulated ones).
 
     python -m gate_block export-laya PHOTOS_DIR --out laya_data [--labels labels.csv] [--simulate 400]
 
-Each row is what Laya's trainer reads (``laya-train --data train.jsonl``)::
+Each row is what Laya's trainer reads (``laya.train.finetune``; the training itself is done outside this
+repository)::
 
     {"state": "<compact JSON, exactly as sent at inference>",
      "questions": {...the three questions of laya_client.QUESTIONS...},

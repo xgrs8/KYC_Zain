@@ -73,12 +73,11 @@ Every concern has its own file, and every number the gate uses has its own confi
 | `gate_block/config.py` | loads and validates every file in `config/` |
 | `gate_block/synth.py` | simulated phone photos (tests, demo, training data) |
 | `gate_block/cli.py` | the command line (`python -m gate_block …`) |
-| `gate_block/tools/` | calibration, evaluation, Laya training data and fine-tuning, packing the trained head |
+| `gate_block/tools/` | calibration, evaluation, Laya's training data |
 | `config/*.yaml` | thresholds, rules, decision tree, messages, routing, Laya, merge, recognition, intake, paths |
 | `templates/<doc>/` | one clean reference image per side and `layout.json` (outline, fields, critical fields) |
-| `models/gate_laya_head.safetensors` | the trained Laya decision head (`laya-assemble` puts it on the multilingual checkpoint) |
-| `training/` | the Kaggle notebook and scripts: Laya's training data on Hugging Face, whole-model training (SFT, then RL), checks, publishing |
-| `tests/` | about 400 tests (instruments, measurements, rules, router, Laya contract, pipeline, CLI, training scripts) |
+| `datasets/laya/` | Laya's training data (made by `laya-data`, labelled by the rules) and a script that publishes it on Hugging Face |
+| `tests/` | about 400 tests (instruments, measurements, rules, router, Laya contract, pipeline, CLI, the dataset) |
 | `docs/` | how it works, what is measured, Laya, failure modes |
 
 ## Install
@@ -94,37 +93,30 @@ python -m gate_block doctor          # self-test: config, templates, recognition
 ```
 
 Laya is optional for running the gate (without it the deterministic rules decide), and needed for the
-full design. In the environment where Laya is installed (`pip install laya==0.4.31`):
+full design. It needs a checkpoint **fine-tuned for the gate** (see [Laya](#laya)); no model weights are
+kept in this repository. In the environment where Laya is installed (`pip install laya==0.4.31`):
 
 ```powershell
 pip install -r requirements.txt
-python -m gate_block doctor --laya "D:\path\to\gate_laya"
+python -m gate_block doctor --laya "D:\path\to\your_gate_checkpoint"
 ```
 
-`gate_laya` is the fine-tuned checkpoint (see [Laya](#laya)). The trained head ships in this folder,
-`models/gate_laya_head.safetensors` (30 MB, sha256 `321df404…5534`); it is put back on top of your
-multilingual Laya folder (`convaiinnovations/laya-multilingual`) with one command, which refuses a base
-whose encoder differs from the one it was trained on:
-
-```powershell
-python -m gate_block laya-assemble --base "D:\Desktop\Ai\Models\Laya\Multilingual" --head models\gate_laya_head.safetensors --out gate_laya
-```
-
-A model trained with the Kaggle notebook (`training/`) is a complete checkpoint and needs no assembly:
-`--laya RADAXGRS/laya-kyc-gate` (or the folder it was downloaded to).
+`--laya` takes a checkpoint folder or a Hugging Face id. The doctor asks it three probe states and says
+whether its answers follow the gate's rules, or whether it gives the same answer to everything (a
+checkpoint that has not been fine-tuned for the gate).
 
 ## Use it
 
 Command line (prints a short JSON result; `--out` writes the complete one, `--full` prints it):
 
 ```powershell
-python -m gate_block check photo.jpg --expect tax_card --laya gate_laya
-python -m gate_block id front.jpg back.jpg --workdir out --laya gate_laya
-python -m gate_block submission --id-front f.jpg --id-back b.jpg --tax-card t.jpg --business-license l.jpg --workdir out --laya gate_laya
-python -m gate_block recheck docres_output.png --previous result.json --laya gate_laya
+python -m gate_block check photo.jpg --expect tax_card --laya CHECKPOINT
+python -m gate_block id front.jpg back.jpg --workdir out --laya CHECKPOINT
+python -m gate_block submission --id-front f.jpg --id-back b.jpg --tax-card t.jpg --business-license l.jpg --workdir out --laya CHECKPOINT
+python -m gate_block recheck docres_output.png --previous result.json --laya CHECKPOINT
 python -m gate_block overlay photo.jpg --out overlay.png       # draw what the gate found
 python -m gate_block tree                                      # the decision tree, messages and Laya's questions
-python -m gate_block demo --laya gate_laya                     # simulated photos through the whole gate
+python -m gate_block demo --laya CHECKPOINT                     # simulated photos through the whole gate
 ```
 
 Python:
@@ -132,7 +124,7 @@ Python:
 ```python
 from gate_block import Gate, LayaBackend
 
-gate = Gate(backend=LayaBackend("gate_laya"))       # Gate() alone: the rules decide
+gate = Gate(backend=LayaBackend("CHECKPOINT"))      # Gate() alone: the rules decide
 r = gate.process_id("front.jpg", "back.jpg", workdir="out")
 r.route            # accept | enhance | reject | review
 r.next_block       # teleocr | docres | retake | human_review
@@ -164,17 +156,11 @@ safety rules). Laya makes the judgement call between them — a mild defect: OCR
 first? a moderate one: restore, or ask for a new photo? which task, which retake reason? — and Python
 checks the choice against the same conditions before routing.
 
-The base multilingual Laya answers the reason and task questions sensibly out of the box but accepts
-badly blurred or glared photos, so the gate ships a **fine-tuned decision head** (the encoder is frozen
-and unchanged). Only the head is trained, so the trained part is a small file; `laya-assemble` puts it
-back on top of your multilingual checkpoint and refuses a different base. Details, training data and
-results: [docs/LAYA.md](docs/LAYA.md).
-
-To train the **whole model** (encoder included) on a GPU, from a fresh multilingual checkpoint and the
-published data (`RADAXGRS/kyc-gate-laya-decisions` on Hugging Face), run
-[`training/kaggle_train_laya.ipynb`](training/README.md) on Kaggle: SFT teaches the decision, RL with
-proper-scoring-rule rewards trains the confidence, and the model is published only if it passes the
-held-out checks (no false accept, decision accuracy >= 98 %, calibrated confidence).
+The base multilingual Laya often names a sensible reason or task, but it accepts almost every photo,
+badly blurred or glared ones included, so it has to be **fine-tuned on the gate's decisions** first. The
+training data is in [`datasets/laya/`](datasets/laya/README.md) (made by `laya-data`, labelled by the
+rules, with its provenance); the fine-tuning is done outside this repository, and no weights are kept
+here. Details: [docs/LAYA.md](docs/LAYA.md).
 
 Whatever Laya says, Python checks it before anything happens: a choice the measurements do not permit
 (accepting a photo with a moderate defect, enhancing with a task that has no evidence, rejecting a clean
@@ -209,21 +195,21 @@ The suite checks the instruments on inputs with a known answer, every defect on 
 four templates, the rules and the router against every backend (including a broken, a stuck and a random
 one), the Laya contract, the merge against the reference image, the full pipeline and the command line.
 Beyond the suite, the gate was run on the real photos and on the project dataset — see
-[docs/LAYA.md](docs/LAYA.md#end-to-end-results).
+[docs/LAYA.md](docs/LAYA.md#end-to-end-results-with-the-rules-deciding).
 
 ## Documentation
 
 * [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — the flow, the decision, the JSON contract with DocRes and TeleOCR
 * [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md) — what each quality measurement is, how it is made, its thresholds, templates, calibration
-* [docs/LAYA.md](docs/LAYA.md) — the Laya contract, fine-tuning, results
+* [docs/LAYA.md](docs/LAYA.md) — the Laya contract, why it must be fine-tuned, its training data
 * [docs/FAILURE_MODES.md](docs/FAILURE_MODES.md) — documented failure modes and what the gate does about them
 
 ## Disclosure
 
 Models: Laya 0.4.31 (multilingual checkpoint `convaiinnovations/laya-multilingual`, Apache-2.0, encoder
-`jhu-clsp/mmBERT-base`) as the decision model, with a decision head fine-tuned here. No other model runs
-in the gate; DocRes and TeleOCR are the next blocks. Training data: generated by this block
-(`laya-data`), labelled by its own rules, published with its provenance. Libraries: OpenCV, NumPy,
-Pillow, PyYAML (and PyTorch / safetensors / huggingface_hub for fine-tuning).
+`jhu-clsp/mmBERT-base`) as the decision model, fine-tuned for the gate outside this repository; no model
+weights are kept here. No other model runs in the gate; DocRes and TeleOCR are the next blocks. Training
+data: generated by this block (`laya-data`), labelled by its own rules, kept with its provenance in
+`datasets/laya/`. Libraries: OpenCV, NumPy, Pillow, PyYAML (huggingface_hub only to publish the data).
 AI assistance: the code, tests and documentation of this block were written with Claude (Anthropic) as a
 coding assistant, under the direction of the project author, who defined the design.

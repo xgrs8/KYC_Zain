@@ -333,7 +333,7 @@ def test_permitted_is_exactly_what_the_router_lets_laya_decide():
 
     from gate_block import Gate
     from gate_block.rules import permitted
-    from gate_block.tools.laya_training import random_analysis
+    from gate_block.tools.laya_data import random_analysis
     from gate_block.types import DOCRES_TASKS, REJECT_REASONS
 
     gate = Gate()

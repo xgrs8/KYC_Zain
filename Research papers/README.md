@@ -19,7 +19,11 @@ enhancement in place of Qwen Image 2.1. Its restoration tasks target common
 document-photo problems such as blur, shadows, distortion, and uneven
 appearance. The paper also reports a failure case for end-to-end enhancement
 of camera-captured documents, so outputs should be checked against the source
-image.
+image. The GATE Block does this check: it measures every DocRes output again,
+and when the restoration made the targeted defect worse, added another harmful
+defect or left the document unrecognised, it goes back to the image from
+before. There are at most two DocRes rounds
+([hand-off](../main/GATE%20Block/docs/ARCHITECTURE.md#6-hand-off)).
 
 **Repository scope:** This repository contains the paper, but does not include
 DocRes inference code or model weights.

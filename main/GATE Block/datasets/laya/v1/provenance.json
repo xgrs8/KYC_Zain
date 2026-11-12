@@ -1,7 +1,7 @@
 {
   "command": "python -m gate_block laya-data --out laya_data --photos PHOTOS --simulate 300 --synthetic 3200 --synthetic-enhance 1700 --eval-fraction 0.15 --seed 0",
   "code": "GATE Block 1.0.0, main/GATE Block in https://github.com/xgrs8/kyc_zain",
-  "commit": "see git log -- \"main/GATE Block/training/data/v1\"",
+  "commit": "commit deedad9; the rows were moved to datasets/laya/v1 unchanged",
   "labels": "the GATE Block's deterministic rules (gate_block/rules.py with config/rules.yaml and config/decision_tree.yaml) applied to each measured state; no human labels, no OCR outcomes",
   "photos": {
     "dataset/": "renders of identities 001, 004, 007, 012, 015, 019, 022, 026, 029, 034, 037 and 042 of the synthetic print run (national ID front and back, tax card, company licence), made by Z.ai's Synthetic KYC Dataset Builder; fictional people and companies, IDs without portrait",

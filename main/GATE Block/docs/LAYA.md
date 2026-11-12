@@ -26,8 +26,8 @@ what is wrong.
 | `round`, `done` | after a DocRes pass: which round, which tasks were already applied |
 | `allowed` | the branches the measurements permit (`rules.permitted`): `accept`, `enhance:<task>`, `reject:<reason>`; with a safety rule only `reject:<its reason>` |
 
-The questions (`gate_block/laya_client.py`; the option order is part of the trained model — never
-reorder it):
+The questions (`gate_block/laya_client.py`; a checkpoint fine-tuned for the gate learns the options by
+position — never reorder them):
 
 | Question | Options |
 |---|---|
@@ -37,7 +37,7 @@ reorder it):
 
 ## What Python does with the answer
 
-See [ARCHITECTURE.md](ARCHITECTURE.md#5-the-decision). In short: the answer is used only if it is
+See [ARCHITECTURE.md](ARCHITECTURE.md#5-the-decision-laya_statepy-laya_clientpy-routerpy-rulespy-decision_treepy). In short: the answer is used only if it is
 complete, not truncated and confident enough (`config/laya.yaml`, `min_decision_confidence: 0.55`); the
 chosen branch must be **permitted** by the measurements (accept only without a moderate defect, enhance
 only with a task whose defect was measured and not applied yet, reject only for a measured reason); the
@@ -57,95 +57,68 @@ which reason. Those are also the choices a later retraining on OCR outcomes can 
 enforces exactly the same conditions afterwards, and a photo with nothing to choose from is decided by
 the rules without asking Laya.
 
-## Why the head is fine-tuned
+## Why Laya must be fine-tuned
 
-Asked zero-shot, the base multilingual Laya picks sensible reasons and tasks but gets the main decision
-wrong in both directions: it chose `reject:other` for clean photos and `accept` for photos with severe
-blur or a covering object. Python's validation catches every one of those (the photo is decided by the
-rules instead), but then Laya decides nothing. So the gate teaches Laya its decision tree.
+Asked zero-shot, the base multilingual Laya does not judge severity: it answers `accept` for almost
+everything. On the 625 validation rows of [`datasets/laya/v1`](../datasets/laya/README.md) it said
+`accept` for 591 of them, among them 246 of the 277 photos that must be retaken and 277 of the 280 that
+need DocRes, so its main decision agreed with the rules on 16 % of the rows (reject reason 77 %, DocRes
+task 68 %). On the ten real phone photos it accepted nine, six of the seven bad ones among them.
+
+Python's validation stops every answer the measurements do not permit: none of those accepts of a photo
+that must be retaken would reach OCR, because a safety rule or the rules decide instead. But then Laya
+decides nothing, and where the measurements leave a real choice (a mild defect: OCR as it is, or restore
+first?) the base model nearly always answers `accept`.
+
+So `--laya` needs a checkpoint fine-tuned on the gate's decisions. The fine-tuning is done outside this
+repository, and no model weights are kept here; without `--laya` the deterministic rules decide, which is
+the default. `python -m gate_block doctor --laya CHECKPOINT` asks a checkpoint three probe states the gate
+really builds and says whether its answers agree with the rules; a checkpoint that gives the same answer
+for every state has not been fine-tuned for the gate.
 
 ## Training data (`python -m gate_block laya-data`)
 
-Each row is a state, the three questions, and the expected answers. The labels are the decisions of the
-gate's deterministic rules (`gate_block/rules.py`) — the same rules that are the fallback — on:
+Each row is a state, the three questions and the expected answers, in the format `laya.train.finetune`
+reads as it is. The labels are the decisions of the gate's deterministic rules (`gate_block/rules.py`) —
+the same rules that are the fallback — on:
 
-* **photos**: the ten real phone photos and the photographed dataset cards, measured by the gate;
+* **photos**: real image files measured by the gate (renders of the synthetic print run, and phone photos
+  of one printed licence);
 * **simulated photos**: every template under random combinations of blur, camera shake, shadow, glare,
   darkness, cut-off, a finger, curl, distance, angle and phone-like tone curves, measured by the gate;
 * **synthetic states**: random defect severities and field problems for every document side, labelled
   by the rules (they cover combinations that are rare in photos, and every reason and task);
+* **task-choice states** (`--synthetic-enhance`): synthetic states kept only where the rules enhance and
+  two or more DocRes tasks are permitted, so the order of the tasks and the tasks already applied are
+  well covered;
 
 with each state's DocRes round and already-applied tasks. Identical states are kept a limited number of
-times, and a state is never split between training and evaluation, so the evaluation measures states
-Laya has not seen.
+times, and a state is never split between training and validation, so the validation split measures
+states a model trained on the rows has not seen.
 
-Only the decision head is trained: the encoder stays bit-identical to the multilingual checkpoint.
-Everything around the optimisation is Laya's own `laya.train.finetune` (reading the rows, holding out a
-calibration slice, the evaluation before and after, fitting the temperatures and abstention thresholds,
-saving a checkpoint `laya.load` reads); `laya-train` replaces only its inner loop. Because a frozen encoder
-always returns the same output for the same sequence, that output is computed once, in batches of
-similar length; the head layers are then trained on it, and the last layer computes only the positions
-that are read (the option markers and token 0) while still attending to every token. The shortcut is
-checked against Laya's own forward pass before training starts (difference below 1e-4). Seven epochs are
-a CPU job of under two hours (a GPU makes it minutes). The objective is soft cross-entropy (the labels are
-exact decisions).
-`laya-pack` writes just the head and records a digest of the encoder; `laya-assemble` rebuilds the full
-checkpoint from your multilingual folder and refuses a different one.
+The rows of this version are in [`datasets/laya/`](../datasets/laya/README.md): 3 367 for training and
+625 for validation, with their counts and provenance. `datasets/laya/publish_dataset.py` publishes them as
+a Hugging Face dataset with a card written from the data.
 
 ```powershell
-python -m gate_block laya-data  --out laya_data --photos PHOTOS --simulate 400 --synthetic 4000
-python -m gate_block laya-train --base MULTILINGUAL_DIR --data laya_data --out gate_laya --epochs 7 --device cpu
-python -m gate_block laya-pack  gate_laya --out gate_laya_head.safetensors --base MULTILINGUAL_DIR
-python -m gate_block laya-assemble --base MULTILINGUAL_DIR --head gate_laya_head.safetensors --out gate_laya
-python -m gate_block evaluate --simulate 300 --seed 7 --laya gate_laya
+python -m gate_block laya-data --out laya_data --photos PHOTOS --simulate 300 --synthetic 3200 --synthetic-enhance 1700 --seed 0
+python -m gate_block export-laya PHOTOS --labels labels.csv --out laya_export   # rows from your own photos
 ```
 
-## Results
+Regenerate the rows after any change to the rules, the decision tree or the thresholds: the labels follow
+them. `export-laya --labels` takes labels from a CSV instead of the rules (for example from TeleOCR
+outcomes); those are the labels that can make Laya better than the rules.
 
-The shipped head (`models/gate_laya_head.safetensors`) was trained in two steps on a CPU (method
-`cached-head`, encoder unchanged):
+With a fine-tuned checkpoint:
 
-1. 7 epochs on `laya-data --simulate 400 --synthetic 4000` plus the real and dataset photos: 2 714
-   training states (4 744 question items, of which Laya holds out 400 for calibration);
-2. 3 more epochs on a top-up of 1 666 states in which the rules enhance and two or more DocRes tasks are
-   permitted (now `--synthetic-enhance`), mixed with 1 390 states of step 1 so the rest is not forgotten.
+```powershell
+python -m gate_block doctor --laya CHECKPOINT
+python -m gate_block evaluate --simulate 300 --seed 7 --laya CHECKPOINT     # how often Laya agrees with the rules
+```
 
-Held-out evaluation, per question, on 531 states (989 items) that never occur in training
-(`agent.predict` as the gate calls it):
+## End-to-end results with the rules deciding
 
-| Question | Base multilingual Laya | After step 1 | After step 2 (shipped) |
-|---|---|---|---|
-| `decision` (accept / enhance / reject) | 22.2 % | 99.4 % | **99.4 %** |
-| `reject_reason` (10 reasons) | 76.4 % | 99.7 % | **99.7 %** |
-| `docres_task` (5 tasks) | 74.8 % | 93.9 % | **100 %** (115 / 115) |
-
-* The base model accepted 302 of the 343 photos that must be retaken and 111 of the 115 that need
-  DocRes. The fine-tuned head **accepts none of them**: its three decision errors are two
-  `accept → enhance` and one `accept → reject` (a usable photo restored or retaken; never a bad photo
-  sent to OCR).
-* Calibration (Laya fits the temperatures on 400 calibration items it holds out of the training data;
-  measured on the 989 held-out items): expected calibration error 0.9 % after step 1 and 0.7 % after
-  step 2, mean confidence 99.4 % at 99.6 % accuracy; no decision fell under the 0.55 confidence floor.
-* Step 1's task errors came from too few training states in which more than one task is permitted: the
-  head had rarely seen the order the rules use (dewarping, deblurring, deshadowing, appearance) or a task
-  that was already applied. Step 2 adds exactly those states. It was designed after looking at these
-  errors, so its 100 % on this set is optimistic; the published dataset's validation split and the
-  end-to-end run below are the independent checks.
-
-### Training the whole model on a GPU
-
-`training/kaggle_train_laya.ipynb` starts from a fresh `convaiinnovations/laya-multilingual`, pulls the
-published data (`RADAXGRS/kyc-gate-laya-decisions`, the same generator with `--synthetic-enhance`), trains
-the whole model (encoder included) in two stages — SFT (`soft-ce`) for the decision, then RL (`rlcd`,
-proper-scoring-rule rewards) for the confidence — checks it on the held-out split and publishes it only
-if every gate passes. See [training/README.md](../training/README.md).
-
-End to end with the gate, see [the end-to-end results](#end-to-end-results).
-
-### End-to-end results
-
-The whole gate with the shipped Laya head (`LayaBackend`, CPU), every photo also run through the rules
-alone for comparison:
+The whole gate as it runs without `--laya` (CPU):
 
 | Group | Correct |
 |---|---|
@@ -156,21 +129,18 @@ alone for comparison:
 | Gate 1: wrong document, wrong side, swapped sides, six kinds of non-document, a broken file, a blank image | 12 / 12 |
 | DocRes round trips (`recheck`): fixed, made worse, two rounds, no third round | 7 / 7 |
 
-Laya decided 90 of the photos that reached a decision (the other two were decided by the rules because
-nothing was left to choose, and one by the recheck), always within the permitted branches and always with
-the same answer as the rules (91 of 91 eligible); no answer had a confidence under 0.9. Whole submissions
-route as the worst document: three good documents → `accept`; a licence photo in the tax-card slot →
-`reject` with `wrong_document` for that slot.
+Of the 93 photos in the quality groups (everything but Gate 1), the deterministic rules decided 70, a
+safety rule 22 and the DocRes recheck 1. Whole submissions route as the worst document: three good
+documents → `accept`; a licence photo in the tax-card slot → `reject` with `wrong_document` for that slot.
 
-On the published dataset's validation split (608 states the head never saw, made by the same generator
-after the head was trained): decision 99.5 %, reject reason 99.6 %, DocRes task **93.2 %**, no false
-accept. This is the independent figure for the task choice; the whole-model training of
-`training/kaggle_train_laya.ipynb` learns from 1 157 task-choice states and reports its own held-out
-numbers.
+These are the answers a checkpoint fine-tuned on `datasets/laya` is meant to reproduce. With `--laya`
+every photo is still run through the rules as well (`rules_baseline` in the result), so the same run shows
+where Laya and the rules differ.
 
 ## Limits
 
-* Laya imitates the rules it was taught by; it is valuable as a calibrated, fast decision layer that can
-  later be retrained on better labels (TeleOCR outcomes: was the photo read correctly? did DocRes help?),
-  not as a source of better judgement today. See [FAILURE_MODES.md](FAILURE_MODES.md#4-laya-can-only-be-as-good-as-the-rules-it-was-taught-by).
+* A Laya fine-tuned on these rows imitates the rules it was taught by; it is valuable as a calibrated,
+  fast decision layer that can later be retrained on better labels (TeleOCR outcomes: was the photo read
+  correctly? did DocRes help?), not as a source of better judgement today. See
+  [FAILURE_MODES.md](FAILURE_MODES.md#4-laya-can-only-be-as-good-as-the-rules-it-was-taught-by).
 * When Laya's top probability is under 0.55 the rules decide; that share is reported by `evaluate`.

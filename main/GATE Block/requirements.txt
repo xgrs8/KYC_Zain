@@ -6,6 +6,6 @@ pyyaml>=6.0                     # 6.0.3
 
 # Optional
 # laya==0.4.31                  # the decision model (install it in the environment that has your Laya)
-# torch, safetensors            # come with laya; needed for laya-train / laya-pack / laya-assemble
+# huggingface_hub               # only for datasets/laya/publish_dataset.py
 # pillow-heif                   # iPhone HEIC uploads
 # pytest>=8                     # the test suite

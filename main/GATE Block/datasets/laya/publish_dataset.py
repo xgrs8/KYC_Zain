@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Publish the GATE Block's Laya training data to Hugging Face as a public dataset, with an honest card.
 
-    python publish_dataset.py --data data/v1 --stage hf_dataset                    # build and look at it
-    python publish_dataset.py --data data/v1 --push RADAXGRS/kyc-gate-laya-decisions   # and publish it
+    python publish_dataset.py --data v1 --stage hf_dataset                    # build and look at it
+    python publish_dataset.py --data v1 --push RADAXGRS/kyc-gate-laya-decisions   # and publish it
 
 ``--data`` is a folder written by ``python -m gate_block laya-data`` (train.jsonl, eval.jsonl,
 summary.json; the .gz versions kept in the repository work too). The card is written from the data itself
@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 REPO_URL = "https://github.com/xgrs8/kyc_zain"
 ORIGINS = {
     "synthetic": "measurement states drawn at random over the gate's severity scales "
-                 "(`gate_block.tools.laya_training.random_analysis`); no image behind them",
+                 "(`gate_block.tools.laya_data.random_analysis`); no image behind them",
     "synthetic_enhance": "drawn the same way, but kept only where the rules choose *enhance* and two or more DocRes "
                          "tasks are permitted (the cases where the choice of the task matters)",
     "simulated_photo": "synthetic photos made from the four document templates by `gate_block.synth` (blur, camera "
@@ -153,8 +153,8 @@ from datasets import load_dataset
 ds = load_dataset("{provenance.get('repo', 'RADAXGRS/kyc-gate-laya-decisions')}")
 ```
 
-Training: `training/train_laya.py` in the repository (SFT then RL with proper-scoring-rule rewards, whole
-model, from `convaiinnovations/laya-multilingual`).
+The rows are what `laya.train.finetune` reads, as they are; the fine-tuning itself is not part of the
+repository.
 """
 
 

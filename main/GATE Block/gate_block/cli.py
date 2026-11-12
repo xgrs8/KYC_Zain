@@ -9,12 +9,9 @@
     python -m gate_block tree                                      the decision tree and the messages
     python -m gate_block overlay PHOTO --out overlay.png           what the gate saw
     python -m gate_block calibrate PHOTOS_DIR --out calibration    thresholds from your own photos
-    python -m gate_block export-laya PHOTOS_DIR --out laya_data    fine-tuning rows for Laya
+    python -m gate_block export-laya PHOTOS_DIR --out laya_data    Laya training rows from your photos
     python -m gate_block evaluate PHOTOS_DIR --labels labels.csv   accuracy of the rules, of Laya, and of both
     python -m gate_block laya-data --out laya_data                 training set that teaches Laya the gate's decisions
-    python -m gate_block laya-train --base LAYA_DIR --data laya_data --out gate_laya
-    python -m gate_block laya-pack gate_laya --out head.safetensors   the trained head as one small file
-    python -m gate_block laya-assemble --base LAYA_DIR --head head.safetensors --out gate_laya
     python -m gate_block demo                                      simulated photos through the gate
 
 Add ``--laya PATH_OR_HF_ID`` to let Laya decide; without it the deterministic rules decide.
@@ -155,34 +152,13 @@ def cmd_evaluate(args) -> int:
 
 
 def cmd_laya_data(args) -> int:
-    from .tools import laya_training
+    from .tools import laya_data
     if args.laya:
         print("laya-data must run without --laya (the labels must not depend on the model being trained)", file=sys.stderr)
         return 2
-    laya_training.build_dataset(_build_gate(args), args.out, photos=args.photos, simulate=args.simulate,
-                                synthetic=args.synthetic, eval_fraction=args.eval_fraction, seed=args.seed,
-                                synthetic_enhance=args.synthetic_enhance)
-    return 0
-
-
-def cmd_laya_train(args) -> int:
-    from .tools import laya_training
-    out = laya_training.train(args.base, args.data, args.out, epochs=args.epochs, micro_batch=args.micro_batch,
-                              grad_accum=args.grad_accum, head_lr=args.head_lr, method=args.method,
-                              device=args.device or "auto", seed=args.seed, loss=args.loss, finish_only=args.finish_only)
-    print(_dump({k: v for k, v in out.items() if k in ("train_items", "calibration_items", "eval_items", "output_dir")}))
-    return 0
-
-
-def cmd_laya_pack(args) -> int:
-    from .tools import laya_training
-    print(_dump(laya_training.pack_head(args.checkpoint, args.out, base_dir=args.base)))
-    return 0
-
-
-def cmd_laya_assemble(args) -> int:
-    from .tools import laya_training
-    print(_dump(laya_training.assemble(args.base, args.head, args.out)))
+    laya_data.build_dataset(_build_gate(args), args.out, photos=args.photos, simulate=args.simulate,
+                            synthetic=args.synthetic, eval_fraction=args.eval_fraction, seed=args.seed,
+                            synthetic_enhance=args.synthetic_enhance)
     return 0
 
 
@@ -409,7 +385,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--good-label", default="good", help="name of the folder that holds the good photos")
     s.set_defaults(func=cmd_calibrate)
 
-    s = sub.add_parser("export-laya", parents=[common], help="write fine-tuning rows for Laya")
+    s = sub.add_parser("export-laya", parents=[common], help="write Laya training rows from your photos")
     s.add_argument("folder", nargs="?", help="photos folder (optional when --simulate is used)")
     s.add_argument("--out", default="laya_data")
     s.add_argument("--labels", help="CSV with the columns sample, decision, reason, task")
@@ -437,37 +413,6 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--eval-fraction", type=float, default=0.15)
     s.add_argument("--seed", type=int, default=0)
     s.set_defaults(func=cmd_laya_data)
-
-    s = sub.add_parser("laya-train", help="fine-tune a Laya checkpoint on a laya-data folder")
-    s.add_argument("--base", required=True, help="the Laya checkpoint to start from (e.g. the Multilingual folder)")
-    s.add_argument("--data", required=True, help="the folder written by laya-data")
-    s.add_argument("--out", required=True, help="where the fine-tuned checkpoint is written")
-    s.add_argument("--method", choices=["cached-head", "last-layer", "head", "full"], default="cached-head",
-                   help="cached-head (default): the whole decision head on the cached encoder output; last-layer: only "
-                        "the last head layer and the scorer (fastest); head: Laya's own loop with the encoder frozen; "
-                        "full: the encoder too (a GPU job; the result cannot be packed)")
-    s.add_argument("--epochs", type=int, default=7)
-    s.add_argument("--micro-batch", type=int, default=32, help="batch size")
-    s.add_argument("--grad-accum", type=int, default=1, help="(method head / full only)")
-    s.add_argument("--head-lr", type=float, default=1e-3)
-    s.add_argument("--loss", choices=["soft-ce", "rlcd"], default="soft-ce", help="objective of methods head / full")
-    s.add_argument("--finish-only", action="store_true",
-                   help="no training: calibrate, evaluate and save --base (e.g. the checkpoint_latest of a stopped run)")
-    s.add_argument("--device", help="cpu, cuda ... (default: Laya's choice)")
-    s.add_argument("--seed", type=int, default=0)
-    s.set_defaults(func=cmd_laya_train)
-
-    s = sub.add_parser("laya-pack", help="write the trained decision head of a checkpoint to one small file")
-    s.add_argument("checkpoint")
-    s.add_argument("--out", required=True)
-    s.add_argument("--base", help="check that the encoder equals this base checkpoint")
-    s.set_defaults(func=cmd_laya_pack)
-
-    s = sub.add_parser("laya-assemble", help="rebuild a fine-tuned checkpoint from the base checkpoint and a packed head")
-    s.add_argument("--base", required=True)
-    s.add_argument("--head", required=True)
-    s.add_argument("--out", required=True)
-    s.set_defaults(func=cmd_laya_assemble)
 
     s = sub.add_parser("demo", parents=[common], help="run simulated photos through the gate")
     s.set_defaults(func=cmd_demo)

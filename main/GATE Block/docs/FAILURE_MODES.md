@@ -51,11 +51,12 @@ once Block 3 exists.
 
 ## 4. Laya can only be as good as the rules it was taught by
 
-**What happens.** The base multilingual Laya, asked zero-shot, accepted photos with severe blur and glare
-and rejected clean ones. The gate therefore lists the branches the measurements permit in Laya's state and
-fine-tunes Laya's decision head to choose between them — but the training labels come from the gate's own
-deterministic rules (applied to simulated photos, the dataset, the real photos and synthetic measurement
-states). Laya learns to imitate the rules' choices; it cannot discover a better decision than they encode.
+**What happens.** The base multilingual Laya, asked zero-shot, accepted almost every photo, severe blur
+and glare included. The gate therefore lists the branches the measurements permit in Laya's state, and
+Laya has to be fine-tuned (outside this repository, on the rows in `datasets/laya/`) to choose between
+them — but those labels come from the gate's own deterministic rules (applied to simulated photos, the
+dataset, the real photos and synthetic measurement states). A Laya trained on them learns to imitate the
+rules' choices; it cannot discover a better decision than they encode.
 
 **What the gate does.** Laya's choice is validated against the measurements before anything happens
 (`rules_override` when it picks a branch the measurements do not permit), and the safety rules always

@@ -9,7 +9,7 @@ photos worth reading:
 
 | Block | What it does | Status in this repo |
 |---|---|---|
-| 1. **GATE Block** | Is it the right document? Merges the ID's two sides. Measures the photo's quality (blur, camera shake, glare, shadow, darkness, cut-off, a finger or an object on it, text too small …). **Laya** chooses: accept → OCR, enhance → DocRes (one of its five tasks), or reject with a fixed Iraqi-Arabic message («الصورة مغوشة من فضلك ارجع التقط الصورة بدون تغويش»). Python validates Laya's choice against the measurements before anything happens. | [`main/GATE Block/`](main/GATE%20Block/README.md) |
+| 1. **GATE Block** | Is it the right document? Merges the ID's two sides. Measures the photo's quality (blur, camera shake, glare, shadow, darkness, cut-off, a finger or an object on it, text too small …). **Laya** chooses (or the deterministic rules, while no fine-tuned Laya is connected): accept → OCR, enhance → DocRes (one of its five tasks), or reject with a fixed Iraqi-Arabic message («الصورة مغوشة من فضلك ارجع التقط الصورة بدون تغويش»). Python validates Laya's choice against the measurements before anything happens. | [`main/GATE Block/`](main/GATE%20Block/README.md) |
 | 2. DocRes | Restores the photo with one task: deblurring, deshadowing, dewarping, appearance or binarization ([paper](Research%20papers/README.md#docres)). The GATE Block re-checks every DocRes output before it goes on. | planned |
 | 3. TeleOCR | Reads the fields. | planned |
 | 4. Reasoning and verification | A language model (Qwen3.8-27B) cross-checks the fields (MRZ against the printed fields, dates, consistency between documents) with a calibrated verifier. | planned |
@@ -28,11 +28,10 @@ numbers have 13 digits. Labels follow **what is printed** (OCR reads the paper),
 values are kept separately, and every deviation is declared in each photo's truth file:
 [`Software/A.L.G/README.md`](Software/A.L.G/README.md#labeling-the-photographed-print-run).
 
-Laya's training data for the GATE Block is published on Hugging Face (`RADAXGRS/kyc-gate-laya-decisions`)
-with a card that states where every row comes from; its labels are the gate's own rules, not human
-judgements. The Kaggle notebook in [`main/GATE Block/training`](main/GATE%20Block/training/README.md)
-trains a fresh Laya on it (SFT for the decision, then RL with proper-scoring-rule rewards for the
-confidence) and publishes the model only if it passes the checks.
+Laya's training data for the GATE Block is in
+[`main/GATE Block/datasets/laya`](main/GATE%20Block/datasets/laya/README.md), with where every row comes
+from; its labels are the gate's own rules, not human judgements. Laya is fine-tuned on it outside this
+repository, and no model weights are kept here.
 
 ## Repository layout
 
@@ -41,7 +40,7 @@ KYC_Zain/
 ├── README.md                 this file
 ├── main/
 │   └── GATE Block/           Block 1: document check, ID merge, quality gate, Laya decision, routing
-│       └── training/         Kaggle notebook and scripts: Laya's data on Hugging Face, training, checks
+│       └── datasets/laya/    Laya's training data, labelled by the gate's rules
 ├── Software/
 │   └── A.L.G/                the labelling tool (desktop app) and its MCP server for AI labelling
 └── Research papers/          DocRes and CALICO, with notes on how the project uses them
@@ -75,22 +74,22 @@ The GATE Block documents the ways it can fail, what it does about each, and what
 [`main/GATE Block/docs/FAILURE_MODES.md`](main/GATE%20Block/docs/FAILURE_MODES.md). Among them: photos
 of a screen or a photocopy are not detected (presentation attacks are out of scope of Block 1); a very
 small document is reported as "no document" rather than "too far"; the quality thresholds are starting
-values that need calibration on real customer photos; Laya was taught by the gate's own rules, so it
+values that need calibration on real customer photos; Laya is taught by the gate's own rules, so it
 can only be as good as they are until it is retrained on OCR outcomes.
 
 ## Models, tools and AI used
 
 | What | Where | Role |
 |---|---|---|
-| Laya 0.4.31, multilingual checkpoint (encoder `jhu-clsp/mmBERT-base`), with a decision head fine-tuned in this project | GATE Block | chooses accept / enhance / reject, the DocRes task and the retake reason; its choice is validated by code |
-| OpenCV, NumPy, Pillow, PyYAML; PyTorch and safetensors for fine-tuning | GATE Block | recognition, measurements, merge |
+| Laya 0.4.31, multilingual checkpoint `convaiinnovations/laya-multilingual` (Apache-2.0, encoder `jhu-clsp/mmBERT-base`), fine-tuned for the gate outside this repository | GATE Block | chooses accept / enhance / reject, the DocRes task and the retake reason; its choice is validated by code |
+| OpenCV, NumPy, Pillow, PyYAML | GATE Block | recognition, measurements, merge |
 | DocRes (Zhang et al., 2024) | Block 2 (planned) | document restoration |
 | TeleOCR | Block 3 (planned) | reading the fields |
 | Qwen3.8-27B | Block 4 (planned) | cross-checking and reasoning |
 | PySide6, Pillow, arabic-reshaper, python-bidi; the `mcp` Python SDK | A.L.G | labelling app; MCP server for AI labelling |
 | Z.ai *Synthetic KYC Dataset Builder* | the dataset | generated the 90 synthetic identities and their print sheets (with the generation errors documented in A.L.G) |
 | Tesseract 5 (Arabic) | A.L.G `tools/verify_printed_truth.py` | only to check which text is printed where on the print sheets; not part of the pipeline |
-| Hugging Face Hub, Kaggle | `main/GATE Block/training` | hosting Laya's training data and model; GPU training |
+| Hugging Face Hub (`huggingface_hub`) | `main/GATE Block/datasets/laya/publish_dataset.py` | optional: publishing Laya's training data as a dataset |
 | Claude (Anthropic), as a coding assistant | whole repository | helped write and test code and documentation under the author's direction (commits carry a `Co-Authored-By` trailer) |
 | Other AI coding assistants | A.L.G | used by the author while building the labelling tool |
 
