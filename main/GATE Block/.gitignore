@@ -8,8 +8,9 @@ venv/
 build/
 dist/
 
-# model weights and training output stay out of git (the packed head is attached to a release instead)
+# model weights and training output stay out of git, except the small trained head the gate ships with
 *.safetensors
+!models/gate_laya_head.safetensors
 *.bin
 *.pt
 gate_laya/

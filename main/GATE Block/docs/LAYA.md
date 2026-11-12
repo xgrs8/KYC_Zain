@@ -102,8 +102,8 @@ python -m gate_block evaluate --simulate 300 --seed 7 --laya gate_laya
 
 ## Results
 
-The shipped head (`gate_laya_head.safetensors`) was trained in two steps on a CPU (method `cached-head`,
-encoder unchanged):
+The shipped head (`models/gate_laya_head.safetensors`) was trained in two steps on a CPU (method
+`cached-head`, encoder unchanged):
 
 1. 7 epochs on `laya-data --simulate 400 --synthetic 4000` plus the real and dataset photos: 2 714
    training states (4 744 question items, of which Laya holds out 400 for calibration);

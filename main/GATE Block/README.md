@@ -76,6 +76,7 @@ Every concern has its own file, and every number the gate uses has its own confi
 | `gate_block/tools/` | calibration, evaluation, Laya training data and fine-tuning, packing the trained head |
 | `config/*.yaml` | thresholds, rules, decision tree, messages, routing, Laya, merge, recognition, intake, paths |
 | `templates/<doc>/` | one clean reference image per side and `layout.json` (outline, fields, critical fields) |
+| `models/gate_laya_head.safetensors` | the trained Laya decision head (`laya-assemble` puts it on the multilingual checkpoint) |
 | `training/` | the Kaggle notebook and scripts: Laya's training data on Hugging Face, whole-model training (SFT, then RL), checks, publishing |
 | `tests/` | about 400 tests (instruments, measurements, rules, router, Laya contract, pipeline, CLI, training scripts) |
 | `docs/` | how it works, what is measured, Laya, failure modes |
@@ -100,13 +101,13 @@ pip install -r requirements.txt
 python -m gate_block doctor --laya "D:\path\to\gate_laya"
 ```
 
-`gate_laya` is the fine-tuned checkpoint (see [Laya](#laya)). The trained head,
-`gate_laya_head.safetensors` (30 MB), is attached to the repository's release **gate-block-v1.0.0**
-(weights stay out of git); it is put back on top of your multilingual Laya folder with one command, which
-refuses a base whose encoder differs from the one it was trained on:
+`gate_laya` is the fine-tuned checkpoint (see [Laya](#laya)). The trained head ships in this folder,
+`models/gate_laya_head.safetensors` (30 MB, sha256 `321df404…5534`); it is put back on top of your
+multilingual Laya folder (`convaiinnovations/laya-multilingual`) with one command, which refuses a base
+whose encoder differs from the one it was trained on:
 
 ```powershell
-python -m gate_block laya-assemble --base "D:\Desktop\Ai\Models\Laya\Multilingual" --head gate_laya_head.safetensors --out gate_laya
+python -m gate_block laya-assemble --base "D:\Desktop\Ai\Models\Laya\Multilingual" --head models\gate_laya_head.safetensors --out gate_laya
 ```
 
 A model trained with the Kaggle notebook (`training/`) is a complete checkpoint and needs no assembly:
